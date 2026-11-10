@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms</value></resheader>
+  <data name="Tagline" xml:space="preserve"><value>Comfortable screen lighting</value></data>
+  <data name="PowerName" xml:space="preserve"><value>NightDim on or off</value></data>
+  <data name="PowerOn" xml:space="preserve"><value>ON</value></data>
+  <data name="PowerOff" xml:space="preserve"><value>OFF</value></data>
+  <data name="LanguageEnglish" xml:space="preserve"><value>Switch to English</value></data>
+  <data name="LanguageRussian" xml:space="preserve"><value>Switch to Russian</value></data>
+  <data name="Monitor" xml:space="preserve"><value>Monitor</value></data>
+  <data name="MonitorSync" xml:space="preserve"><value>Sync displays</value></data>
+  <data name="MonitorSyncName" xml:space="preserve"><value>Synchronize monitors</value></data>
+  <data name="MonitorSyncTip" xml:space="preserve"><value>Apply the same settings to all monitors</value></data>
+  <data name="HdrUnknown" xml:space="preserve"><value>HDR unknown</value></data>
+  <data name="Primary" xml:space="preserve"><value>primary</value></data>
+  <data name="Profile" xml:space="preserve"><value>Profile</value></data>
+  <data name="ProfileNeutral" xml:space="preserve"><value>Neutral</value></data>
+  <data name="ProfileDay" xml:space="preserve"><value>Day</value></data>
+  <data name="ProfileEvening" xml:space="preserve"><value>Evening</value></data>
+  <data name="ProfileNight" xml:space="preserve"><value>Night</value></data>
+  <data name="ProfileCustom" xml:space="preserve"><value>Custom</value></data>
+  <data name="ProfileCustomTip" xml:space="preserve"><value>Apply the saved custom profile</value></data>
+  <data name="Brightness" xml:space="preserve"><value>Brightness</value></data>
+  <data name="SoftwareDimming" xml:space="preserve"><value>Software dimming</value></data>
+  <data name="BrightnessHelp" xml:space="preserve"><value>Arrow keys and the mouse wheel adjust brightness by one percent when the slider has focus.</value></data>
+  <data name="BrightnessTip" xml:space="preserve"><value>Use the arrow keys or the mouse wheel to adjust by 1%. Levels from 1% to 10% require confirmation.</value></data>
+  <data name="Temperature" xml:space="preserve"><value>Color temperature</value></data>
+  <data name="Warmer" xml:space="preserve"><value>Warmer</value></data>
+  <data name="Cooler" xml:space="preserve"><value>Cooler</value></data>
+  <data name="FineTuning" xml:space="preserve"><value>Fine tuning</value></data>
+  <data name="FineTuningTip" xml:space="preserve"><value>Gamma, blue light reduction and RGB channels</value></data>
+  <data name="FineExpanded" xml:space="preserve"><value>Section expanded</value></data>
+  <data name="FineCollapsed" xml:space="preserve"><value>Section collapsed</value></data>
+  <data name="Gamma" xml:space="preserve"><value>Gamma</value></data>
+  <data name="BlueReduction" xml:space="preserve"><value>Blue light reduction</value></data>
+  <data name="RgbChannels" xml:space="preserve"><value>RGB channels</value></data>
+  <data name="Red" xml:space="preserve"><value>Red</value></data>
+  <data name="Green" xml:space="preserve"><value>Green</value></data>
+  <data name="Blue" xml:space="preserve"><value>Blue</value></data>
+  <data name="Settings" xml:space="preserve"><value>Settings</value></data>
+  <data name="SettingsTip" xml:space="preserve"><value>Settings and keyboard shortcuts</value></data>
+  <data name="BackToControls" xml:space="preserve"><value>Back to controls</value></data>
+  <data name="Startup" xml:space="preserve"><value>Start with Windows</value></data>
+  <data name="StartupTip" xml:space="preserve"><value>Start NightDim in the notification area when you sign in.</value></data>
+  <data name="StartupUnavailable" xml:space="preserve"><value>Windows startup registration is unavailable.</value></data>
+  <data name="StartupError" xml:space="preserve"><value>Windows did not save the startup setting.</value></data>
+  <data name="Hotkeys" xml:space="preserve"><value>Keyboard shortcuts</value></data>
+  <data name="SaveCurrent" xml:space="preserve"><value>Save current settings</value></data>
+  <data name="SaveTarget" xml:space="preserve"><value>Profile to update</value></data>
+  <data name="Save" xml:space="preserve"><value>Save</value></data>
+  <data name="SaveHint" xml:space="preserve"><value>The selected profile will use the current monitor's settings.</value></data>
+  <data name="Diagnostics" xml:space="preserve"><value>Display diagnostics</value></data>
+  <data name="LutReadbackHint" xml:space="preserve"><value>LUT readback reflects the driver state. Visual results depend on the display.</value></data>
+  <data name="ExitApp" xml:space="preserve"><value>Exit NightDim</value></data>
+  <data name="ExitAppTip" xml:space="preserve"><value>Restore brightness and exit NightDim</value></data>
+  <data name="PreviewCountdown" xml:space="preserve"><value>Brightness preview · reverting in {0} s</value></data>
+  <data name="PreviewCancel" xml:space="preserve"><value>Restore brightness</value></data>
+  <data name="PreviewKeep" xml:space="preserve"><value>Keep</value></data>
+  <data name="Reset" xml:space="preserve"><value>Reset</value></data>
+  <data name="ResetTip" xml:space="preserve"><value>Restore neutral settings for the selected monitor</value></data>
+  <data name="AlreadyRunning" xml:space="preserve"><value>NightDim is already running. Open it from the notification area.</value></data>
+  <data name="StartupFailed" xml:space="preserve"><value>NightDim could not start. {0}</value></data>
+  <data name="TrayOpen" xml:space="preserve"><value>Open NightDim</value></data>
+  <data name="TrayEffect" xml:space="preserve"><value>Screen effects</value></data>
+  <data name="TrayRestore" xml:space="preserve"><value>Emergency restore</value></data>
+  <data name="TrayExit" xml:space="preserve"><value>Exit</value></data>
+  <data name="LowRecheck" xml:space="preserve"><value>Low brightness needs a new preview. Turn NightDim on when you are ready.</value></data>
+  <data name="DisplaysRefreshFailed" xml:space="preserve"><value>Could not update the monitor list. {0}</value></data>
+  <data name="LowNeedsHotkey" xml:space="preserve"><value>A registered emergency shortcut is required for levels from 1% to 10%.</value></data>
+  <data name="PreviewUnavailable" xml:space="preserve"><value>The overlay check failed. Restoring previous settings.</value></data>
+  <data name="RestoreJournalKept" xml:space="preserve"><value>Could not confirm LUT restoration. The recovery entry has been kept.</value></data>
+  <data name="DisplayControlFailed" xml:space="preserve"><value>Display control failed. {0}</value></data>
+  <data name="PreviewTimedOut" xml:space="preserve"><value>The preview expired. Restoring previous settings.</value></data>
+  <data name="PreviewReverted" xml:space="preserve"><value>Restoring previous settings.</value></data>
+  <data name="SaveFailed" xml:space="preserve"><value>Could not save settings to disk.</value></data>
+  <data name="EmergencyRestored" xml:space="preserve"><value>Screen effects are off. Turn them back on in the window or notification area.</value></data>
+  <data name="OverlayRemovedLutUnconfirmed" xml:space="preserve"><value>The overlay was removed. LUT restoration could not be confirmed.</value></data>
+  <data name="RecoveryNextLaunch" xml:space="preserve"><value>Could not confirm restoration. NightDim will check the journal on the next launch.</value></data>
+  <data name="StatusOff" xml:space="preserve"><value>Off</value></data>
+  <data name="StatusOffDetail" xml:space="preserve"><value>Turn NightDim on to apply the selected settings.</value></data>
+  <data name="NoMonitors" xml:space="preserve"><value>No monitors found</value></data>
+  <data name="NoMonitorsDetail" xml:space="preserve"><value>NightDim will scan again when the display configuration changes.</value></data>
+  <data name="NeutralStatus" xml:space="preserve"><value>Neutral</value></data>
+  <data name="EffectUnavailable" xml:space="preserve"><value>Effect unavailable</value></data>
+  <data name="CaptureExclusionDenied" xml:space="preserve"><value>Windows declined to exclude the overlay from capture.</value></data>
+  <data name="CheckingDisplay" xml:space="preserve"><value>Checking display</value></data>
+  <data name="CheckingDisplayDetail" xml:space="preserve"><value>Checking which correction methods are available.</value></data>
+  <data name="RestoreShortcutUnavailable" xml:space="preserve"><value>The emergency shortcut is unavailable. Levels from 1% to 10% are locked.</value></data>
+  <data name="RestoreShortcut" xml:space="preserve"><value>Restore {0}</value></data>
+  <data name="ToggleShortcut" xml:space="preserve"><value>Toggle Ctrl+Alt+F9</value></data>
+  <data name="Effect_Neutral" xml:space="preserve"><value>Additional screen effects are off.</value></data>
+  <data name="Effect_RestoreUnverified" xml:space="preserve"><value>Restoration of the original LUT could not be confirmed.</value></data>
+  <data name="Effect_HdrUnsupported" xml:space="preserve"><value>HDR is active. LUT color adjustments are unavailable.</value></data>
+  <data name="Effect_SdrUnconfirmed" xml:space="preserve"><value>SDR could not be confirmed. LUT color adjustments are unavailable.</value></data>
+  <data name="Effect_RecoveryUnsupported" xml:space="preserve"><value>The LUT cannot be safely restored on this output.</value></data>
+  <data name="Effect_JournalReadFailed" xml:space="preserve"><value>Could not check the LUT recovery journal.</value></data>
+  <data name="Effect_BaselineReadFailed" xml:space="preserve"><value>Could not read a restorable original LUT.</value></data>
+  <data name="Effect_ReadbackUnavailable" xml:space="preserve"><value>LUT readback is unavailable. Writes are paused.</value></data>
+  <data name="Effect_CorrectionLimitedByBaseline" xml:space="preserve"><value>The original LUT limits color correction.</value></data>
+  <data name="Effect_ReadbackConfirmed" xml:space="preserve"><value>The LUT matched on readback.</value></data>
+  <data name="Effect_ReadbackConfirmedLimited" xml:space="preserve"><value>The LUT matched on readback. Correction is limited for readability and GDI compatibility.</value></data>
+  <data name="Effect_JournalWriteFailed" xml:space="preserve"><value>Could not write the recovery journal. The new LUT was skipped.</value></data>
+  <data name="Effect_PostWriteReadbackUnavailable" xml:space="preserve"><value>Windows did not return the LUT after writing. Recovery has been deferred.</value></data>
+  <data name="Effect_ConfirmedRampSaveFailed" xml:space="preserve"><value>Could not save the confirmed LUT for recovery.</value></data>
+  <data name="Effect_ChangeUnverifiedWriteSuspended" xml:space="preserve"><value>The LUT change could not be confirmed. Writes are paused until reset.</value></data>
+  <data name="Effect_ChangeUnverifiedRestoreDeferred" xml:space="preserve"><value>The LUT change could not be confirmed. Restoration has been deferred.</value></data>
+  <data name="Effect_ExternalRampChange" xml:space="preserve"><value>Another application or Windows changed the LUT. Writes are paused until reset.</value></data>
+  <data name="Effect_ExtremeDimmingSuspended" xml:space="preserve"><value>Very low brightness is paused until the LUT can be checked.</value></data>
+  <data name="Effect_OverlayUnavailable" xml:space="preserve"><value>The dimming overlay is unavailable.</value></data>
+</root>

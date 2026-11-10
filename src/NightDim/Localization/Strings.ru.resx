@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms</value></resheader>
+  <data name="Tagline" xml:space="preserve"><value>Комфортное освещение экрана</value></data>
+  <data name="PowerName" xml:space="preserve"><value>Включить или выключить NightDim</value></data>
+  <data name="PowerOn" xml:space="preserve"><value>ВКЛ</value></data>
+  <data name="PowerOff" xml:space="preserve"><value>ВЫКЛ</value></data>
+  <data name="LanguageEnglish" xml:space="preserve"><value>Переключить на английский</value></data>
+  <data name="LanguageRussian" xml:space="preserve"><value>Переключить на русский</value></data>
+  <data name="Monitor" xml:space="preserve"><value>Монитор</value></data>
+  <data name="MonitorSync" xml:space="preserve"><value>Синхронизация</value></data>
+  <data name="MonitorSyncName" xml:space="preserve"><value>Синхронизация мониторов</value></data>
+  <data name="MonitorSyncTip" xml:space="preserve"><value>Применять одинаковые параметры ко всем мониторам</value></data>
+  <data name="HdrUnknown" xml:space="preserve"><value>HDR неизвестен</value></data>
+  <data name="Primary" xml:space="preserve"><value>основной</value></data>
+  <data name="Profile" xml:space="preserve"><value>Профиль</value></data>
+  <data name="ProfileNeutral" xml:space="preserve"><value>Нейтральный</value></data>
+  <data name="ProfileDay" xml:space="preserve"><value>День</value></data>
+  <data name="ProfileEvening" xml:space="preserve"><value>Вечер</value></data>
+  <data name="ProfileNight" xml:space="preserve"><value>Ночь</value></data>
+  <data name="ProfileCustom" xml:space="preserve"><value>Свой</value></data>
+  <data name="ProfileCustomTip" xml:space="preserve"><value>Применить сохранённый пользовательский профиль</value></data>
+  <data name="Brightness" xml:space="preserve"><value>Яркость</value></data>
+  <data name="SoftwareDimming" xml:space="preserve"><value>Программное затемнение</value></data>
+  <data name="BrightnessHelp" xml:space="preserve"><value>Стрелки и колёсико при фокусе меняют яркость на один процент.</value></data>
+  <data name="BrightnessTip" xml:space="preserve"><value>Стрелки или колёсико при фокусе меняют яркость на 1%. Диапазон 1–10% требует подтверждения.</value></data>
+  <data name="Temperature" xml:space="preserve"><value>Цветовая температура</value></data>
+  <data name="Warmer" xml:space="preserve"><value>Теплее</value></data>
+  <data name="Cooler" xml:space="preserve"><value>Холоднее</value></data>
+  <data name="FineTuning" xml:space="preserve"><value>Тонкая настройка</value></data>
+  <data name="FineTuningTip" xml:space="preserve"><value>Гамма, ослабление синего и каналы RGB</value></data>
+  <data name="FineExpanded" xml:space="preserve"><value>Раздел раскрыт</value></data>
+  <data name="FineCollapsed" xml:space="preserve"><value>Раздел свёрнут</value></data>
+  <data name="Gamma" xml:space="preserve"><value>Гамма</value></data>
+  <data name="BlueReduction" xml:space="preserve"><value>Ослабление синего</value></data>
+  <data name="RgbChannels" xml:space="preserve"><value>Каналы RGB</value></data>
+  <data name="Red" xml:space="preserve"><value>Красный</value></data>
+  <data name="Green" xml:space="preserve"><value>Зелёный</value></data>
+  <data name="Blue" xml:space="preserve"><value>Синий</value></data>
+  <data name="Settings" xml:space="preserve"><value>Настройки</value></data>
+  <data name="SettingsTip" xml:space="preserve"><value>Настройки и горячие клавиши</value></data>
+  <data name="BackToControls" xml:space="preserve"><value>Вернуться к регуляторам</value></data>
+  <data name="Startup" xml:space="preserve"><value>Запускать с Windows</value></data>
+  <data name="StartupTip" xml:space="preserve"><value>При входе в Windows NightDim запускается в системном трее.</value></data>
+  <data name="StartupUnavailable" xml:space="preserve"><value>Не удалось проверить автозапуск Windows.</value></data>
+  <data name="StartupError" xml:space="preserve"><value>Windows не сохранила настройку автозапуска.</value></data>
+  <data name="Hotkeys" xml:space="preserve"><value>Горячие клавиши</value></data>
+  <data name="SaveCurrent" xml:space="preserve"><value>Сохранить текущие параметры</value></data>
+  <data name="SaveTarget" xml:space="preserve"><value>Профиль для сохранения</value></data>
+  <data name="Save" xml:space="preserve"><value>Сохранить</value></data>
+  <data name="SaveHint" xml:space="preserve"><value>Выбранный профиль получит параметры текущего монитора.</value></data>
+  <data name="Diagnostics" xml:space="preserve"><value>Диагностика экрана</value></data>
+  <data name="LutReadbackHint" xml:space="preserve"><value>Чтение LUT отражает состояние драйвера. Визуальный результат зависит от дисплея.</value></data>
+  <data name="ExitApp" xml:space="preserve"><value>Выйти из NightDim</value></data>
+  <data name="ExitAppTip" xml:space="preserve"><value>Восстановить яркость и завершить работу NightDim</value></data>
+  <data name="PreviewCountdown" xml:space="preserve"><value>Проверка яркости · возврат через {0} с</value></data>
+  <data name="PreviewCancel" xml:space="preserve"><value>Вернуть яркость</value></data>
+  <data name="PreviewKeep" xml:space="preserve"><value>Оставить</value></data>
+  <data name="Reset" xml:space="preserve"><value>Сбросить</value></data>
+  <data name="ResetTip" xml:space="preserve"><value>Вернуть нейтральные параметры выбранного монитора</value></data>
+  <data name="AlreadyRunning" xml:space="preserve"><value>NightDim уже запущен. Откройте окно через значок в системном трее.</value></data>
+  <data name="StartupFailed" xml:space="preserve"><value>Не удалось запустить NightDim. {0}</value></data>
+  <data name="TrayOpen" xml:space="preserve"><value>Открыть NightDim</value></data>
+  <data name="TrayEffect" xml:space="preserve"><value>Затемнение экрана</value></data>
+  <data name="TrayRestore" xml:space="preserve"><value>Аварийное восстановление</value></data>
+  <data name="TrayExit" xml:space="preserve"><value>Выход</value></data>
+  <data name="LowRecheck" xml:space="preserve"><value>Для низкой яркости требуется новая проверка. Включите NightDim, когда будете готовы.</value></data>
+  <data name="DisplaysRefreshFailed" xml:space="preserve"><value>Не удалось обновить список мониторов. {0}</value></data>
+  <data name="LowNeedsHotkey" xml:space="preserve"><value>Для диапазона 1–10% нужна зарегистрированная аварийная клавиша.</value></data>
+  <data name="PreviewUnavailable" xml:space="preserve"><value>Проверка overlay не пройдена. Возврат к предыдущим параметрам.</value></data>
+  <data name="RestoreJournalKept" xml:space="preserve"><value>Не удалось подтвердить восстановление LUT. Запись восстановления сохранена.</value></data>
+  <data name="DisplayControlFailed" xml:space="preserve"><value>Ошибка управления дисплеем. {0}</value></data>
+  <data name="PreviewTimedOut" xml:space="preserve"><value>Время проверки истекло. Возврат к предыдущим параметрам.</value></data>
+  <data name="PreviewReverted" xml:space="preserve"><value>Возврат к предыдущим параметрам.</value></data>
+  <data name="SaveFailed" xml:space="preserve"><value>Не удалось сохранить параметры на диск.</value></data>
+  <data name="EmergencyRestored" xml:space="preserve"><value>Затемнение отключено. Его можно включить в окне или трее.</value></data>
+  <data name="OverlayRemovedLutUnconfirmed" xml:space="preserve"><value>Overlay убран. Не удалось подтвердить восстановление LUT.</value></data>
+  <data name="RecoveryNextLaunch" xml:space="preserve"><value>Не удалось подтвердить восстановление. При следующем запуске NightDim проверит журнал.</value></data>
+  <data name="StatusOff" xml:space="preserve"><value>Отключено</value></data>
+  <data name="StatusOffDetail" xml:space="preserve"><value>Включите NightDim, чтобы применить выбранные параметры.</value></data>
+  <data name="NoMonitors" xml:space="preserve"><value>Мониторы не найдены</value></data>
+  <data name="NoMonitorsDetail" xml:space="preserve"><value>NightDim повторит обнаружение при изменении конфигурации.</value></data>
+  <data name="NeutralStatus" xml:space="preserve"><value>Нейтральный режим</value></data>
+  <data name="EffectUnavailable" xml:space="preserve"><value>Затемнение недоступно</value></data>
+  <data name="CaptureExclusionDenied" xml:space="preserve"><value>Windows отклонила исключение overlay из захвата.</value></data>
+  <data name="CheckingDisplay" xml:space="preserve"><value>Проверка дисплея</value></data>
+  <data name="CheckingDisplayDetail" xml:space="preserve"><value>Определяем доступные способы коррекции.</value></data>
+  <data name="RestoreShortcutUnavailable" xml:space="preserve"><value>Аварийная клавиша недоступна. Диапазон 1–10% заблокирован.</value></data>
+  <data name="RestoreShortcut" xml:space="preserve"><value>Возврат {0}</value></data>
+  <data name="ToggleShortcut" xml:space="preserve"><value>Вкл./выкл. Ctrl+Alt+F9</value></data>
+  <data name="Effect_Neutral" xml:space="preserve"><value>Дополнительные эффекты выключены.</value></data>
+  <data name="Effect_RestoreUnverified" xml:space="preserve"><value>Восстановление исходной LUT не подтверждено.</value></data>
+  <data name="Effect_HdrUnsupported" xml:space="preserve"><value>HDR. Цветовые настройки LUT недоступны.</value></data>
+  <data name="Effect_SdrUnconfirmed" xml:space="preserve"><value>Режим SDR не подтверждён. Цветовые настройки LUT недоступны.</value></data>
+  <data name="Effect_RecoveryUnsupported" xml:space="preserve"><value>Для этого выхода нельзя безопасно восстановить LUT.</value></data>
+  <data name="Effect_JournalReadFailed" xml:space="preserve"><value>Не удалось проверить журнал восстановления LUT.</value></data>
+  <data name="Effect_BaselineReadFailed" xml:space="preserve"><value>Не удалось прочитать восстанавливаемую исходную LUT.</value></data>
+  <data name="Effect_ReadbackUnavailable" xml:space="preserve"><value>Контрольное чтение LUT недоступно. Запись приостановлена.</value></data>
+  <data name="Effect_CorrectionLimitedByBaseline" xml:space="preserve"><value>Цветовая коррекция ограничена параметрами исходной LUT.</value></data>
+  <data name="Effect_ReadbackConfirmed" xml:space="preserve"><value>LUT подтверждена контрольным чтением.</value></data>
+  <data name="Effect_ReadbackConfirmedLimited" xml:space="preserve"><value>LUT подтверждена чтением. Коррекция ограничена для читаемости и совместимости с GDI.</value></data>
+  <data name="Effect_JournalWriteFailed" xml:space="preserve"><value>Не удалось записать журнал восстановления. Новая LUT пропущена.</value></data>
+  <data name="Effect_PostWriteReadbackUnavailable" xml:space="preserve"><value>Windows не вернула LUT после записи. Восстановление отложено.</value></data>
+  <data name="Effect_ConfirmedRampSaveFailed" xml:space="preserve"><value>Не удалось сохранить подтверждённую LUT для восстановления.</value></data>
+  <data name="Effect_ChangeUnverifiedWriteSuspended" xml:space="preserve"><value>Изменение LUT не подтверждено. Запись приостановлена до сброса.</value></data>
+  <data name="Effect_ChangeUnverifiedRestoreDeferred" xml:space="preserve"><value>Изменение LUT не подтверждено. Восстановление отложено.</value></data>
+  <data name="Effect_ExternalRampChange" xml:space="preserve"><value>LUT изменилась извне. Запись приостановлена до сброса.</value></data>
+  <data name="Effect_ExtremeDimmingSuspended" xml:space="preserve"><value>Глубокое затемнение приостановлено до проверки LUT.</value></data>
+  <data name="Effect_OverlayUnavailable" xml:space="preserve"><value>Окно затемнения недоступно.</value></data>
+</root>

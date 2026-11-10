@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/NightDim.Core/NightDim.Core.csproj" />
+    <Project Path="src/NightDim/NightDim.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/NightDim.Tests/NightDim.Tests.csproj" />
+    <Project Path="tests/NightDim.UiChecks/NightDim.UiChecks.csproj" />
+  </Folder>
+</Solution>

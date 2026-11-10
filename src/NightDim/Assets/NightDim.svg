@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="NightDim">
+  <defs>
+    <linearGradient id="tile" x2="100%" y2="100%">
+      <stop stop-color="#253C50"/>
+      <stop offset="1" stop-color="#101B2A"/>
+    </linearGradient>
+    <linearGradient id="moon" x2="100%" y2="100%">
+      <stop stop-color="#C0F0FA"/>
+      <stop offset="1" stop-color="#70BED9"/>
+    </linearGradient>
+  </defs>
+  <rect x="1.5" y="1.5" width="61" height="61" rx="15" fill="url(#tile)" stroke="#436277" stroke-width="1.5"/>
+  <path d="M29 11.5A15.5 15.5 0 1 0 44 34.5A14.3 14.3 0 0 1 29 11.5Z" fill="url(#moon)"/>
+  <path d="M44 12L45.6 16.4 50 18 45.6 19.6 44 24 42.4 19.6 38 18 42.4 16.4Z" fill="#BFEAF5"/>
+  <rect x="15.5" y="48" width="33" height="4" rx="2" fill="#506A80"/>
+  <rect x="15.5" y="48" width="9.5" height="4" rx="2" fill="#83C6DB"/>
+  <circle cx="25" cy="50" r="4.3" fill="#C0F0FA"/>
+</svg>
