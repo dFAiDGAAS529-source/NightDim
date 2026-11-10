@@ -22,7 +22,11 @@ var tests = new (string Name, Action Run)[]
     ("Foreign LUT change relinquishes ownership", ForeignWriter),
     ("Quantized readback uses exact ownership for restoration", QuantizedReadback),
     ("Post-write read failure retains recovery state", ReadFailureAfterWrite),
+    ("Read failure after a working LUT never stacks a full overlay", BlocksUncertainFallback),
     ("Unconfirmed gamma prevents an extreme overlay", BlocksUncertainExtreme),
+    ("Fixed overlay keeps the brightness curve and skips gamma access", FixedOverlay),
+    ("Switching to fixed overlay releases only our LUT", FixedOverlayReleasesOwnedRamp),
+    ("Persisted gamma uncertainty blocks both overlay modes", PersistedGammaUncertainty),
     ("Unavailable journal prevents unsafe writes", UnavailableJournal),
     ("External changes during journaling prevent the write", RecheckAfterJournal),
     ("Unreadable pre-write state does not leave a candidate to recover", UnreadableBeforeWrite),
@@ -157,7 +161,7 @@ void SettingsRoundTrip() => InTempDirectory(path =>
     var manager = new ProfileManager(file);
     var settings = new Preferences
     {
-        Enabled = false, Language = "en", Synchronize = true, SelectedDisplayId = display.Id,
+        Enabled = false, OverlayOnly = true, Language = "en", Synchronize = true, SelectedDisplayId = display.Id,
         Synchronized = new EffectSettings(20, 5000),
         Displays = { [display.Id] = new EffectSettings(50) },
         Profiles = { ["custom"] = new EffectSettings(101, 9000, 1.4) }
@@ -165,7 +169,7 @@ void SettingsRoundTrip() => InTempDirectory(path =>
 
     Check(manager.Save(settings));
     Preferences saved = manager.Load();
-    Check(!saved.Enabled && saved.Language == "en" && saved.Synchronize && saved.SelectedDisplayId == display.Id);
+    Check(!saved.Enabled && saved.OverlayOnly && saved.Language == "en" && saved.Synchronize && saved.SelectedDisplayId == display.Id);
     Check(saved.Synchronized == settings.Synchronized && saved.Displays[display.Id] == settings.Displays[display.Id]);
     Check(saved.Profiles["custom"] == new EffectSettings(100, 8000, 1.4));
     Check(saved.Profiles.Count == 5 && saved.Profiles["neutral"] == EffectSettings.Neutral);
@@ -180,7 +184,7 @@ void SettingsRoundTrip() => InTempDirectory(path =>
 
     File.WriteAllText(file, """{"Profiles":null,"Displays":{"discard":null},"Synchronized":null}""");
     Preferences migrated = manager.Load();
-    Check(migrated.Language == "ru" && migrated.Profiles.Count == 5 && migrated.Displays.Count == 0
+    Check(!migrated.OverlayOnly && migrated.Language == "ru" && migrated.Profiles.Count == 5 && migrated.Displays.Count == 0
         && migrated.Synchronized == EffectSettings.Neutral);
     File.WriteAllText(file, "{");
     Check(manager.Load().Profiles["night"] == ProfileManager.DefaultProfiles["night"]);
@@ -296,13 +300,39 @@ void ReadFailureAfterWrite()
         return true;
     };
     var journal = new MemoryGammaJournal();
-    var engine = Engine(gamma, new FakeOverlay(), journal);
-    Check(engine.Apply(display, new EffectSettings(70)).Mechanism == EffectMechanism.Overlay);
+    var overlay = new FakeOverlay();
+    var engine = Engine(gamma, overlay, journal);
+    DisplayEffectResult result = engine.Apply(display, new EffectSettings(70));
+    Check(result.Mechanism == EffectMechanism.Unavailable && overlay.Opacity == 0);
+    Check(result.AdditionalDiagnostic == EffectDiagnostic.DimmingSuspended);
     Check(!engine.Restore(display));
     Check(journal.TryRead(display.Id, out GammaJournalEntry? saved) && saved?.Candidate?.Matches(gamma.Current) == true);
     gamma.CanRead = true;
     gamma.WriteOverride = null;
     Check(engine.Restore(display) && gamma.Current.Matches(GammaRamp.Identity));
+}
+
+void BlocksUncertainFallback()
+{
+    var gamma = new FakeGamma();
+    var overlay = new FakeOverlay();
+    var journal = new MemoryGammaJournal();
+    var engine = Engine(gamma, overlay, journal);
+    Check(engine.Apply(display, new EffectSettings(40)).Mechanism == EffectMechanism.Hybrid);
+
+    gamma.CanRead = false;
+    DisplayEffectResult blocked = engine.Apply(display, new EffectSettings(35));
+    Check(blocked.Mechanism == EffectMechanism.Unavailable && overlay.Opacity == 0);
+    Check(blocked.Status == EffectDiagnostic.ReadbackUnavailable &&
+        blocked.AdditionalDiagnostic == EffectDiagnostic.DimmingSuspended);
+    Check(journal.TryRead(display.Id, out GammaJournalEntry? saved) && saved?.Owns(gamma.Current) == true);
+    Check(gamma.Writes == 1);
+
+    gamma.CanRead = true;
+    Check(engine.Apply(display, new EffectSettings(40)).OverlayOpacity == 108);
+    Check(gamma.Current.Matches(GammaRamp.Identity) && gamma.Writes == 2);
+    Check(engine.Apply(display, new EffectSettings(35)).Mechanism == EffectMechanism.Overlay);
+    Check(gamma.Writes == 2); // Only restoration was retried, not the failed gamma path.
 }
 
 void BlocksUncertainExtreme()
@@ -319,7 +349,73 @@ void BlocksUncertainExtreme()
     DisplayEffectResult result = engine.Apply(display, new EffectSettings(5));
     Check(result.Mechanism == EffectMechanism.Unavailable && !result.CanPreviewExtreme && overlay.Opacity == 0);
     Check(result.Status == EffectDiagnostic.PostWriteReadbackUnavailable &&
-        result.AdditionalDiagnostic == EffectDiagnostic.ExtremeDimmingSuspended);
+        result.AdditionalDiagnostic == EffectDiagnostic.DimmingSuspended);
+}
+
+void FixedOverlay()
+{
+    var gamma = new FakeGamma { CanRead = false };
+    var engine = Engine(gamma, new FakeOverlay());
+    var settings = new EffectSettings(40, 3000, 1.2);
+
+    DisplayEffectResult result = engine.Apply(display, settings, overlayOnly: true);
+    Check(result.Mechanism == EffectMechanism.Overlay && result.Status == EffectDiagnostic.OverlayOnly);
+    Check(result.OverlayOpacity == 108 && !result.GammaApplied);
+    Check(engine.Apply(display, new EffectSettings(40), overlayOnly: true) == result);
+    Check(engine.Apply(display, settings with { Brightness = 100 }, overlayOnly: true).Mechanism == EffectMechanism.Neutral);
+    Check(gamma.Reads == 0 && gamma.Writes == 0);
+}
+
+void FixedOverlayReleasesOwnedRamp()
+{
+    var gamma = new FakeGamma();
+    var overlay = new FakeOverlay();
+    var engine = Engine(gamma, overlay);
+    var settings = new EffectSettings(40, 3000);
+    Check(engine.Apply(display, settings).Mechanism == EffectMechanism.Hybrid);
+    byte priorOpacity = overlay.Opacity;
+    gamma.WriteOverride = requested =>
+    {
+        Check(overlay.Opacity == priorOpacity && requested.Matches(GammaRamp.Identity));
+        gamma.Current = requested;
+        return true;
+    };
+
+    Check(engine.Apply(display, settings, overlayOnly: true).OverlayOpacity == 108);
+    Check(gamma.Current.Matches(GammaRamp.Identity) && gamma.Writes == 2);
+    gamma.WriteOverride = null;
+
+    Check(engine.Apply(display, settings).Mechanism == EffectMechanism.Hybrid);
+    GammaRamp foreign = GammaCurve.Build(GammaRamp.Identity, new EffectSettings(Gamma: 1.2), 1);
+    gamma.Current = foreign;
+    Check(engine.Apply(display, settings, overlayOnly: true).OverlayOpacity == 108);
+    Check(gamma.Current.Matches(foreign) && gamma.Writes == 3);
+}
+
+void PersistedGammaUncertainty()
+{
+    var gamma = new FakeGamma();
+    var journal = new MemoryGammaJournal();
+    var settings = new EffectSettings(40);
+    Check(Engine(gamma, new FakeOverlay(), journal).Apply(display, settings).GammaApplied);
+    gamma.CanRead = false;
+
+    var overlay = new FakeOverlay();
+    var restarted = Engine(gamma, overlay, journal);
+    DisplayEffectResult fallback = restarted.Apply(display, settings);
+    Check(fallback.Status == EffectDiagnostic.JournalReadFailed &&
+        fallback.AdditionalDiagnostic == EffectDiagnostic.DimmingSuspended && overlay.Opacity == 0);
+
+    DisplayInfo hdr = display with { Hdr = HdrState.Hdr, CanRecoverGamma = false };
+    DisplayEffectResult fixedMode = restarted.Apply(hdr, settings, overlayOnly: true);
+    Check(fixedMode.Status == EffectDiagnostic.OverlayOnly &&
+        fixedMode.AdditionalDiagnostic == EffectDiagnostic.DimmingSuspended && overlay.Opacity == 0);
+    Check(journal.TryRead(display.Id, out GammaJournalEntry? saved) && saved?.Owns(gamma.Current) == true);
+    Check(gamma.Writes == 1);
+
+    gamma.CanRead = true;
+    Check(restarted.Apply(display, settings, overlayOnly: true).OverlayOpacity == 108);
+    Check(gamma.Current.Matches(GammaRamp.Identity) && gamma.Writes == 2);
 }
 
 void UnavailableJournal()

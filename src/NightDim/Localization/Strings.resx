@@ -47,6 +47,9 @@
   <data name="StartupTip" xml:space="preserve"><value>Start NightDim in the notification area when you sign in.</value></data>
   <data name="StartupUnavailable" xml:space="preserve"><value>Windows startup registration is unavailable.</value></data>
   <data name="StartupError" xml:space="preserve"><value>Windows did not save the startup setting.</value></data>
+  <data name="FixedDimming" xml:space="preserve"><value>Fixed dimming</value></data>
+  <data name="FixedDimmingHint" xml:space="preserve"><value>Use a constant-opacity overlay. NightDim color adjustments are paused in this mode.</value></data>
+  <data name="FixedDimmingColorDisabled" xml:space="preserve"><value>Turn off Fixed dimming to adjust color.</value></data>
   <data name="Hotkeys" xml:space="preserve"><value>Keyboard shortcuts</value></data>
   <data name="SaveCurrent" xml:space="preserve"><value>Save current settings</value></data>
   <data name="SaveTarget" xml:space="preserve"><value>Profile to update</value></data>
@@ -108,6 +111,7 @@
   <data name="Effect_ChangeUnverifiedWriteSuspended" xml:space="preserve"><value>The LUT change could not be confirmed. Writes are paused until reset.</value></data>
   <data name="Effect_ChangeUnverifiedRestoreDeferred" xml:space="preserve"><value>The LUT change could not be confirmed. Restoration has been deferred.</value></data>
   <data name="Effect_ExternalRampChange" xml:space="preserve"><value>Another application or Windows changed the LUT. Writes are paused until reset.</value></data>
-  <data name="Effect_ExtremeDimmingSuspended" xml:space="preserve"><value>Very low brightness is paused until the LUT can be checked.</value></data>
+  <data name="Effect_OverlayOnly" xml:space="preserve"><value>Fixed dimming is selected. NightDim color adjustments are paused.</value></data>
+  <data name="Effect_DimmingSuspended" xml:space="preserve"><value>The dimming overlay is off until LUT restoration can be confirmed.</value></data>
   <data name="Effect_OverlayUnavailable" xml:space="preserve"><value>The dimming overlay is unavailable.</value></data>
 </root>

@@ -102,10 +102,7 @@ internal sealed class GammaRampBackend(IGammaTransport transport, IGammaJournal 
 
     public bool Restore(DisplayInfo display)
     {
-        if (!_states.TryGetValue(display.Id, out State? state))
-            return Recover(display);
-
-        if (!RestoreState(display, state))
+        if (!TryReleaseOwnership(display))
             return false;
 
         _states.Remove(display.Id);
@@ -114,16 +111,28 @@ internal sealed class GammaRampBackend(IGammaTransport transport, IGammaJournal 
 
     public void Disconnect(string displayId) => _states.Remove(displayId);
 
-    public bool HasPendingOwnership(string displayId) => _states.TryGetValue(displayId, out State? state) &&
-        (state.Applied is not null || state.Pending is not null);
+    public bool TryReleaseOwnership(DisplayInfo display)
+    {
+        if (_states.TryGetValue(display.Id, out State? state))
+        {
+            // Retain the failure latch when falling back so gamma writes do not resume automatically.
+            if (!RestoreState(display, state))
+                return false;
+            if (state.Failure is null)
+                _states.Remove(display.Id);
+            return true;
+        }
+
+        // Topology changes or restarts can leave only the persisted entry.
+        return journal.TryRead(display.Id, out GammaJournalEntry? entry)
+            && (entry is null || RestoreEntry(display, entry));
+    }
 
     public bool Recover(DisplayInfo display)
     {
         if (_states.ContainsKey(display.Id) || !display.CanRecoverGamma)
             return true;
-        if (!journal.TryRead(display.Id, out GammaJournalEntry? entry))
-            return false;
-        return entry is null || RestoreEntry(display, entry);
+        return TryReleaseOwnership(display);
     }
 
     private bool RestoreState(DisplayInfo display, State state)

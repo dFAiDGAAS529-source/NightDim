@@ -47,6 +47,9 @@
   <data name="StartupTip" xml:space="preserve"><value>При входе в Windows NightDim запускается в системном трее.</value></data>
   <data name="StartupUnavailable" xml:space="preserve"><value>Не удалось проверить автозапуск Windows.</value></data>
   <data name="StartupError" xml:space="preserve"><value>Windows не сохранила настройку автозапуска.</value></data>
+  <data name="FixedDimming" xml:space="preserve"><value>Фиксированное затемнение</value></data>
+  <data name="FixedDimmingHint" xml:space="preserve"><value>Использует слой с постоянной непрозрачностью. Цветокоррекция NightDim в этом режиме приостановлена.</value></data>
+  <data name="FixedDimmingColorDisabled" xml:space="preserve"><value>Чтобы настроить цвета, выключите фиксированное затемнение.</value></data>
   <data name="Hotkeys" xml:space="preserve"><value>Горячие клавиши</value></data>
   <data name="SaveCurrent" xml:space="preserve"><value>Сохранить текущие параметры</value></data>
   <data name="SaveTarget" xml:space="preserve"><value>Профиль для сохранения</value></data>
@@ -108,6 +111,7 @@
   <data name="Effect_ChangeUnverifiedWriteSuspended" xml:space="preserve"><value>Изменение LUT не подтверждено. Запись приостановлена до сброса.</value></data>
   <data name="Effect_ChangeUnverifiedRestoreDeferred" xml:space="preserve"><value>Изменение LUT не подтверждено. Восстановление отложено.</value></data>
   <data name="Effect_ExternalRampChange" xml:space="preserve"><value>LUT изменилась извне. Запись приостановлена до сброса.</value></data>
-  <data name="Effect_ExtremeDimmingSuspended" xml:space="preserve"><value>Глубокое затемнение приостановлено до проверки LUT.</value></data>
+  <data name="Effect_OverlayOnly" xml:space="preserve"><value>Выбрано фиксированное затемнение. Цветокоррекция NightDim приостановлена.</value></data>
+  <data name="Effect_DimmingSuspended" xml:space="preserve"><value>Слой затемнения выключен до подтверждения восстановления LUT.</value></data>
   <data name="Effect_OverlayUnavailable" xml:space="preserve"><value>Окно затемнения недоступно.</value></data>
 </root>

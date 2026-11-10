@@ -1,19 +1,17 @@
-# NightDim 1.1.0
-
-## English
-
-- New Windows 11 x64 installer. Download `NightDim-Setup-1.1.0-win-x64.exe` and run it. Setup installs for the current user and adds a Start menu shortcut. The .NET runtime is included.
-- Switch between English and Russian with **EN / RU** next to the effect switch. NightDim remembers your choice.
-- Enable **Start with Windows** in Settings to start NightDim in the system tray when you sign in. This option is off by default.
-- New NightDim icon and clearer **On / Off** switch. Per-monitor dimming, profiles, and emergency restore are still available.
-
-Before updating or uninstalling, exit NightDim from the tray or Settings so it can restore the display. Your local profiles are kept.
+# NightDim 1.1.1
 
 ## Русский
 
-- Новый установщик для Windows 11 x64. Скачайте и запустите `NightDim-Setup-1.1.0-win-x64.exe`. Установка выполняется для текущего пользователя и добавляет ярлык в меню «Пуск». Среда .NET уже включена.
-- Переключайте язык кнопками **EN / RU** рядом с выключателем. NightDim запоминает выбор.
-- Включите **Запускать с Windows** в настройках, чтобы NightDim запускался в трее при входе. По умолчанию автозапуск отключён.
-- Новая иконка NightDim и переключатель **Вкл / Выкл**. Настройки для каждого монитора, профили и аварийное восстановление доступны как прежде.
+- **Фиксированное затемнение** в настройках использует слой с постоянной непрозрачностью для выбранного уровня. Цветокоррекция NightDim приостановлена, её параметры сохраняются.
+- Неизменённые параметры дисплея больше не применяются повторно. Если состояние собственной LUT не удаётся подтвердить или безопасно восстановить, NightDim убирает слой, чтобы избежать двойного затемнения.
+- Если яркость меняется даже с закрытым NightDim, проверьте адаптивную яркость Windows или динамический контраст в меню монитора.
 
-Перед обновлением или удалением завершите NightDim через трей или настройки, чтобы восстановить параметры дисплея. Локальные профили сохраняются.
+Перед обновлением выберите «Выход» в меню NightDim в трее, затем запустите установщик. Профили сохранятся.
+
+## English
+
+- **Fixed dimming** in Settings uses an overlay with constant opacity for the selected level. NightDim color adjustments are paused and their values are kept.
+- NightDim skips unchanged display settings. If it cannot verify or safely restore its LUT, it removes the overlay to avoid double dimming.
+- If brightness varies after you exit NightDim, check content-adaptive brightness in Windows or dynamic contrast on the monitor.
+
+Exit NightDim from the notification area before running the installer. Your profiles are preserved.

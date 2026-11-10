@@ -41,8 +41,9 @@ public enum EffectDiagnostic
     ChangeUnverifiedWriteSuspended,
     ChangeUnverifiedRestoreDeferred,
     ExternalRampChange,
-    ExtremeDimmingSuspended,
+    DimmingSuspended,
     OverlayUnavailable,
+    OverlayOnly,
 }
 
 public sealed record DisplayEffectResult(

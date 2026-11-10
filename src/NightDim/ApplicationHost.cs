@@ -31,7 +31,7 @@ internal sealed class ApplicationHost : IDisposable
     private readonly DispatcherTimer _debounce;
     private readonly DispatcherTimer _topologyTimer;
     private readonly DispatcherTimer _previewTimer;
-    private readonly Dictionary<string, int> _approvedMinimum = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, (int Minimum, bool OverlayOnly)> _approvedMinimum = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, string> _selectedProfiles = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, ScreenResult> _results = new(StringComparer.OrdinalIgnoreCase);
     private HwndSource? _messages;
@@ -106,6 +106,7 @@ internal sealed class ApplicationHost : IDisposable
         _window.DpiChanged += (_, _) => QueueRefresh();
         _window.Activated += (_, _) => QueueRefresh();
         _window.EffectToggled += SetEnabled;
+        _window.OverlayOnlyChanged += enabled => Change(preferences => preferences.OverlayOnly = enabled, render: true);
         _window.SynchronizeToggled += synchronize => Change(preferences =>
         {
             if (synchronize)
@@ -289,6 +290,7 @@ internal sealed class ApplicationHost : IDisposable
                 .ToArray();
             if (_started && !_refreshAfterResume && _displays.SequenceEqual(displays))
                 return;
+            var refreshEffects = _refreshAfterResume;
             _refreshAfterResume = false;
             _debounce.Stop();
             Interlocked.Increment(ref _revision);
@@ -305,7 +307,7 @@ internal sealed class ApplicationHost : IDisposable
             }
             _window.SetDisplays(_displays);
             Render();
-            await ApplyDraftAsync(allowPreview: false, urgent: true);
+            await ApplyDraftAsync(allowPreview: false, urgent: true, refreshEffects: refreshEffects);
         }
         catch (Exception ex)
         {
@@ -313,7 +315,7 @@ internal sealed class ApplicationHost : IDisposable
         }
     }
 
-    private async Task ApplyDraftAsync(bool allowPreview, bool urgent = false)
+    private async Task ApplyDraftAsync(bool allowPreview, bool urgent = false, bool refreshEffects = false)
     {
         if (_ending || _suspended)
             return;
@@ -354,11 +356,13 @@ internal sealed class ApplicationHost : IDisposable
                 if (revision != Volatile.Read(ref _revision))
                     return null;
                 context.UpdateDisplays(displays);
+                if (refreshEffects)
+                    context.InvalidateEffects();
                 if (!requested.Enabled)
                     return new ApplyResult([], context.RestoreAll(), true);
 
                 var compatible = low.All(display => display.Width > 0 && display.Height > 0
-                    && context.Engine.ProbeOverlay(display));
+                    && context.ProbeOverlay(display));
                 if (!compatible)
                     return new ApplyResult([], true, false);
 
@@ -367,7 +371,7 @@ internal sealed class ApplicationHost : IDisposable
                 {
                     if (revision != Volatile.Read(ref _revision))
                         return null;
-                    var effect = context.Engine.Apply(display, SettingsFor(requested, display.Id));
+                    var effect = context.Apply(display, SettingsFor(requested, display.Id), requested.OverlayOnly);
                     applied.Add(new ScreenResult(display.Id, effect, context.Overlay.CaptureExcluded(display.Id)));
                     if (low.Any(item => item.Id == display.Id) && !effect.CanPreviewExtreme)
                         return new ApplyResult(applied, true, false);
@@ -412,7 +416,8 @@ internal sealed class ApplicationHost : IDisposable
         {
             var brightness = SettingsFor(preferences, display.Id).Brightness;
             return brightness <= ExtremeBrightness
-                && (!_approvedMinimum.TryGetValue(display.Id, out var minimum) || brightness < minimum);
+                && (!_approvedMinimum.TryGetValue(display.Id, out var approval)
+                    || brightness < approval.Minimum || preferences.OverlayOnly != approval.OverlayOnly);
         }).ToArray();
 
     private bool InPreview => _previewDeadline != 0;
@@ -437,7 +442,7 @@ internal sealed class ApplicationHost : IDisposable
         if (keep && _previewReady && Environment.TickCount64 < _previewDeadline)
         {
             foreach (var display in UnapprovedDisplays(_draft))
-                _approvedMinimum[display.Id] = SettingsFor(_draft, display.Id).Brightness;
+                _approvedMinimum[display.Id] = (SettingsFor(_draft, display.Id).Brightness, _draft.OverlayOnly);
             EndPreview();
             Commit(_draft);
             Render();
@@ -561,7 +566,7 @@ internal sealed class ApplicationHost : IDisposable
         var profile = _selectedProfiles.GetValueOrDefault(ProfileScope()) ??
             _draft.Profiles.FirstOrDefault(pair => pair.Value == settings).Key ?? "custom";
         var profileMatches = _draft.Profiles.TryGetValue(profile, out var saved) && saved == settings;
-        _window.ShowSettings(settings, _draft.Enabled, _draft.Synchronize, display?.Id, profile, profileMatches);
+        _window.ShowSettings(settings, _draft.Enabled, _draft.Synchronize, display?.Id, profile, profileMatches, _draft.OverlayOnly);
         if (_toggleMenu is not null)
             _toggleMenu.Checked = _draft.Enabled;
 
@@ -616,6 +621,7 @@ internal sealed class ApplicationHost : IDisposable
     private static Preferences Copy(Preferences preferences) => new()
     {
         Enabled = preferences.Enabled,
+        OverlayOnly = preferences.OverlayOnly,
         Language = preferences.Language,
         Synchronize = preferences.Synchronize,
         SelectedDisplayId = preferences.SelectedDisplayId,

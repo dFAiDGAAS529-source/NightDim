@@ -57,6 +57,7 @@ internal sealed class EffectWorker
     internal sealed record Context(Dispatcher Dispatcher, BrightnessEngine Engine, OverlayBackend Overlay)
     {
         private IReadOnlyList<DisplayInfo> _displays = [];
+        private readonly Dictionary<string, AppliedEffect> _applied = new(StringComparer.Ordinal);
 
         internal void UpdateDisplays(IReadOnlyList<DisplayInfo> current)
         {
@@ -65,20 +66,52 @@ internal sealed class EffectWorker
                 && first.CanRecoverGamma == second.CanRecoverGamma
                 && first.Width == second.Width && first.Height == second.Height;
 
-            foreach (var old in _displays.Where(old => !current.Any(display => SameSource(old, display))))
-                Engine.Disconnect(old.Id);
+            foreach (var old in _displays)
+            {
+                if (!current.Contains(old))
+                    _applied.Remove(old.Id);
+                if (!current.Any(display => SameSource(old, display)))
+                    Engine.Disconnect(old.Id);
+            }
             foreach (var display in current.Where(display => !_displays.Any(old => SameSource(old, display))))
                 Engine.Recover(display);
             _displays = current;
         }
 
+        internal DisplayEffectResult Apply(DisplayInfo display, EffectSettings settings, bool overlayOnly)
+        {
+            if (_applied.TryGetValue(display.Id, out var prior) && prior.Display == display
+                && prior.Settings == settings && prior.OverlayOnly == overlayOnly)
+                return prior.Result;
+
+            _applied.Remove(display.Id);
+            var result = Engine.Apply(display, settings, overlayOnly);
+            if (result.Mechanism != EffectMechanism.Unavailable && result.AdditionalDiagnostic != EffectDiagnostic.OverlayUnavailable)
+                _applied[display.Id] = new(display, settings, overlayOnly, result);
+            return result;
+        }
+
+        internal bool ProbeOverlay(DisplayInfo display)
+        {
+            if (Engine.ProbeOverlay(display))
+                return true;
+            _applied.Remove(display.Id);
+            return false;
+        }
+
+        internal void InvalidateEffects() => _applied.Clear();
+
         internal bool RestoreAll()
         {
+            InvalidateEffects();
             Overlay.Clear();
             var restored = true;
             foreach (var display in _displays)
                 restored &= Engine.Restore(display);
             return restored;
         }
+
+        private sealed record AppliedEffect(DisplayInfo Display, EffectSettings Settings,
+            bool OverlayOnly, DisplayEffectResult Result);
     }
 }

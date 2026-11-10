@@ -32,6 +32,7 @@ public partial class MainWindow : Window
 
     private bool _rendering;
     private bool _hasDisplay;
+    private bool _overlayOnly;
     private bool? _startupEnabled;
     private IInputElement? _previousFocus;
 
@@ -46,6 +47,7 @@ public partial class MainWindow : Window
     internal event Action? ExitRequested;
     internal event Action<string>? LanguageChanged;
     internal event Action<bool>? StartupChanged;
+    internal event Action<bool>? OverlayOnlyChanged;
 
     internal MainWindow()
     {
@@ -102,10 +104,11 @@ public partial class MainWindow : Window
     }
 
     internal void ShowSettings(EffectSettings settings, bool enabled, bool synchronize,
-        string? displayId, string profileId, bool profileMatches = true)
+        string? displayId, string profileId, bool profileMatches = true, bool overlayOnly = false)
     {
         _rendering = true;
         _hasDisplay = displayId is not null;
+        SetOverlayOnly(overlayOnly);
         EnabledBox.IsChecked = enabled;
         SyncBox.IsChecked = synchronize;
         DisplaysBox.SelectedValue = displayId;
@@ -250,6 +253,23 @@ public partial class MainWindow : Window
         SettingsButton.IsEnabled = !inPreview;
     }
 
+    private void SetOverlayOnly(bool enabled)
+    {
+        OverlayOnlyBox.IsChecked = enabled;
+        if (_overlayOnly == enabled)
+            return;
+
+        _overlayOnly = enabled;
+        TemperatureSlider.IsEnabled = !enabled;
+        FineButton.IsEnabled = !enabled;
+        FinePanel.IsEnabled = !enabled;
+        FineButton.SetResourceReference(ToolTipProperty, enabled ? "FixedDimmingColorDisabled" : "FineTuningTip");
+        if (enabled)
+            TemperatureSlider.SetResourceReference(ToolTipProperty, "FixedDimmingColorDisabled");
+        else
+            TemperatureSlider.ClearValue(ToolTipProperty);
+    }
+
     private void SetProfileHighlight(string id)
     {
         DayProfile.IsChecked = id == "day";
@@ -301,6 +321,7 @@ public partial class MainWindow : Window
     private void CancelClick(object sender, RoutedEventArgs e) => PreviewAnswered?.Invoke(false);
     private void ExitClick(object sender, RoutedEventArgs e) => ExitRequested?.Invoke();
     private void StartupClick(object sender, RoutedEventArgs e) => StartupChanged?.Invoke(StartupBox.IsChecked == true);
+    private void OverlayOnlyClick(object sender, RoutedEventArgs e) => OverlayOnlyChanged?.Invoke(OverlayOnlyBox.IsChecked == true);
     private void SettingsClick(object sender, RoutedEventArgs e) => SetSettingsOpen(SettingsPanel.Visibility != Visibility.Visible);
 
     private void FineClick(object sender, RoutedEventArgs e)

@@ -6,7 +6,7 @@ NightDim — бесплатная альтернатива CareUEyes для Wind
 
 NightDim is a free CareUEyes alternative for Windows 11. Adjust brightness, gamma and color temperature per monitor for comfortable viewing, day or night.
 
-**[Скачать установщик / Download installer](https://github.com/dFAiDGAAS529-source/NightDim/releases/download/v1.1.0/NightDim-Setup-1.1.0-win-x64.exe)** · [Все релизы / All releases](https://github.com/dFAiDGAAS529-source/NightDim/releases)
+**[Скачать установщик / Download installer](https://github.com/dFAiDGAAS529-source/NightDim/releases/download/v1.1.1/NightDim-Setup-1.1.1-win-x64.exe)** · [Все релизы / All releases](https://github.com/dFAiDGAAS529-source/NightDim/releases)
 
 Установщик работает для текущего пользователя. В главном окне переключатель **EN / RU** меняет язык сразу. Чтобы NightDim запускался в трее после входа в Windows, включите «Запускать с Windows» в настройках. Параметры хранятся локально.
 
@@ -36,6 +36,10 @@ NightDim is a free CareUEyes alternative for Windows 11. Adjust brightness, gamm
 - **Hybrid** — LUT задаёт цвет и часть затемнения, overlay добавляет оставшееся затемнение. Уровни ползунка относительные. Читаемость, физическая светимость и работа поверх полноэкранного видео зависят от конвейера дисплея.
 
 На выходах в режиме Overlay доступны настройки яркости. Цветовые преобразования требуют подходящего SDR-выхода и поддержки LUT. Night Light, ICC-профили и другие программы могут изменить LUT. Если контрольное чтение обнаружит чужую кривую, NightDim прекратит её перезапись до сброса или переключения эффекта. Экранный захват зависит от конкретного API и приложения.
+
+Если при переходе между светлыми и тёмными вкладками меняется яркость всего экрана, включите **«Фиксированное затемнение»** в настройках NightDim. Оно использует постоянную непрозрачность слоя для выбранного уровня и приостанавливает цветокоррекцию NightDim. Прежние настройки цветов снова действуют после выключения этого режима.
+
+Если яркость меняется и после выхода из NightDim через трей, сравните один и тот же серый участок рядом с браузером при переключении вкладок. На встроенном дисплее проверьте **Параметры → Система → Дисплей → Яркость → Изменение яркости на основе содержимого**. На внешнем мониторе проверьте динамический контраст и энергосбережение в его меню. Доступность параметров зависит от оборудования. [Яркость в Windows 11](https://support.microsoft.com/ru-ru/windows/hardware/display-graphics/change-display-brightness-and-color-in-windows) · [Динамическая яркость на мониторах LG](https://www.lg.com/us/support/help-library/lg-monitor-brightness-levels-changing-automatically-CT32003207-20153231419459)
 
 NightDim убирает overlay при выходе и пытается вернуть исходную LUT, только если текущая кривая всё ещё принадлежит NightDim. При аварийном завершении окна уничтожает Windows. Сохранённый журнал позволяет попробовать восстановить LUT при следующем запуске на том же выходе. Перезапуск с сохранённым экстремальным уровнем начинается с отключёнными эффектами. Основные файлы находятся в `%LOCALAPPDATA%\NightDim`.
 

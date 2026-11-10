@@ -6,6 +6,7 @@ namespace NightDim.Core;
 public sealed class Preferences
 {
     public bool Enabled { get; set; } = true;
+    public bool OverlayOnly { get; set; }
     public string Language { get; set; } = "ru";
     public bool Synchronize { get; set; }
     public string? SelectedDisplayId { get; set; }
@@ -46,6 +47,7 @@ public sealed class ProfileManager(string path)
         var result = new Preferences
         {
             Enabled = source.Enabled,
+            OverlayOnly = source.OverlayOnly,
             Language = source.Language == "en" ? "en" : "ru",
             Synchronize = source.Synchronize,
             SelectedDisplayId = IsPersistentDisplayId(source.SelectedDisplayId) ? source.SelectedDisplayId : null,

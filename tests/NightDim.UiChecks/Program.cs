@@ -35,7 +35,7 @@ internal static class Program
 
     private static readonly string[] SettingsControls =
     [
-        "StartupBox", "HotKeyLine", "ProfilesBox", "SaveButton", "DetailLine", "ExitButton",
+        "StartupBox", "OverlayOnlyBox", "HotKeyLine", "ProfilesBox", "SaveButton", "DetailLine", "ExitButton",
     ];
 
     [STAThread]
@@ -56,6 +56,7 @@ internal static class Program
         {
             ApplyLanguage("ru");
             AssertWindowResourceUpdate();
+            AssertEffectWorkerCache();
             foreach (var percent in new[] { 100, 125, 150, 200 })
                 RunScale(percent, output);
             Console.WriteLine($"Rendered UI fixtures: {output}");
@@ -126,6 +127,7 @@ internal static class Program
             layout.RequireReachable(name);
         Require(Equals(layout.Find<CheckBox>("StartupBox").Content, "Запускать с Windows"),
             "The startup label did not switch back to Russian.");
+        AssertOverlayOnly(layout, "Фиксированное затемнение");
         string? savedProfile = null;
         Subscribe(window, "ProfileSaved", (Action<string>)(id => savedProfile = id));
         layout.Find<ComboBox>("ProfilesBox").SelectedValue = "night";
@@ -169,7 +171,7 @@ internal static class Program
             Require(slider.IsEnabled, "Sliders did not unlock when preview closed.");
         }
 
-        Console.WriteLine($"PASS {percent}% | RU/EN, power, startup, fine tuning and 10/5/1% preview | " +
+        Console.WriteLine($"PASS {percent}% | RU/EN, power, startup, fixed dimming, fine tuning and 10/5/1% preview | " +
             $"{scrolled} main and {fineScrolled} fine controls needed scrolling");
         if (percent == 200)
             RunCompactLayout(layout, output);
@@ -275,6 +277,7 @@ internal static class Program
         foreach (var name in SettingsControls)
             layout.RequireReachable(name);
         AssertStartup(layout);
+        AssertOverlayOnly(layout, "Fixed dimming");
         Click(settings);
 
         Invoke(window, "SetPreview", 15, true);
@@ -327,6 +330,98 @@ internal static class Program
         Require(reported == false, "The startup switch did not report the changed value.");
         Unsubscribe(layout.Window, "StartupChanged", onStartup);
         Invoke(layout.Window, "SetStartupState", false);
+    }
+
+    private static void AssertOverlayOnly(FixtureLayout layout, string label)
+    {
+        var window = layout.Window;
+        var toggle = layout.Find<CheckBox>("OverlayOnlyBox");
+        var brightness = layout.Find<Slider>("BrightnessSlider");
+        var temperature = layout.Find<Slider>("TemperatureSlider");
+        var fine = layout.Find<Button>("FineButton");
+        var settings = ProfileManager.DefaultProfiles["evening"];
+        Require(Equals(toggle.Content, label) && toggle.IsEnabled && toggle.IsChecked == false,
+            $"The fixed dimming switch did not show its localized default state ({label}).");
+
+        var changes = new List<bool>();
+        Action<bool> onChange = changes.Add;
+        Subscribe(window, "OverlayOnlyChanged", onChange);
+        ShowSettings(window, settings, "evening", overlayOnly: true);
+        Require(changes.Count == 0 && toggle.IsChecked == true,
+            "Rendering the fixed dimming preference should not emit a user action.");
+        ShowSettings(window, settings, "evening", overlayOnly: false);
+        Require(changes.Count == 0 && toggle.IsChecked == false,
+            "Rendering the standard preference should not emit a user action.");
+
+        toggle.IsChecked = true;
+        Click(toggle);
+        ShowSettings(window, settings, "evening", overlayOnly: true);
+        Require(changes.SequenceEqual(new[] { true }) && toggle.IsChecked == true,
+            "The fixed dimming switch did not report one enable action.");
+        Require(brightness.IsEnabled && !temperature.IsEnabled && !fine.IsEnabled &&
+            FineControls.All(name => !layout.Find<Slider>(name).IsEnabled),
+            "Fixed dimming should keep brightness enabled and disable color controls.");
+        Require(brightness.Value == settings.Brightness && temperature.Value == settings.Temperature,
+            "Switching to fixed dimming should preserve stored slider values.");
+
+        toggle.IsChecked = false;
+        Click(toggle);
+        ShowSettings(window, settings, "evening", overlayOnly: false);
+        Require(changes.SequenceEqual(new[] { true, false }) && toggle.IsChecked == false &&
+            brightness.IsEnabled && temperature.IsEnabled && fine.IsEnabled,
+            "Switching back to the standard mode did not restore color controls.");
+        Unsubscribe(window, "OverlayOnlyChanged", onChange);
+    }
+
+    private static void AssertEffectWorkerCache()
+    {
+        var gamma = new CountingGamma();
+        var overlay = new CountingOverlay();
+        var engine = new BrightnessEngine(gamma, overlay, new MemoryGammaJournal());
+        // Context can read capture status and clear this empty backend. All effects use the fake engine backends.
+        using var inactiveOverlay = new NightDim.Windows.OverlayBackend();
+        var type = typeof(App).Assembly.GetType("NightDim.EffectWorker+Context", throwOnError: true)!;
+        var context = Activator.CreateInstance(type, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance,
+            binder: null, args: [Dispatcher.CurrentDispatcher, engine, inactiveOverlay], culture: null)!;
+        var display = Displays[0];
+        var settings = ProfileManager.DefaultProfiles["evening"];
+        Invoke(context, "UpdateDisplays", (object)new[] { display });
+        Invoke(context, "Apply", display, settings, false);
+        Require(gamma.Writes == 1 && overlay.Sets == 1, "The first standard effect did not apply through both backends.");
+
+        var reads = gamma.Reads;
+        var unchanged = display with { };
+        Invoke(context, "UpdateDisplays", (object)new[] { unchanged });
+        Invoke(context, "Apply", unchanged, settings with { }, false);
+        Require(gamma.Reads == reads && gamma.Writes == 1 && overlay.Sets == 1,
+            "An identical standard effect touched the backends again.");
+
+        Invoke(context, "Apply", display, settings, true);
+        Require(gamma.Current.Matches(GammaRamp.Identity) && gamma.Writes == 2 && overlay.Sets == 2,
+            "Switching to fixed dimming should restore the owned LUT and update the overlay.");
+        reads = gamma.Reads;
+        Invoke(context, "Apply", display, settings, true);
+        Require(gamma.Reads == reads && overlay.Sets == 2, "An identical fixed effect touched the backends again.");
+
+        var changed = settings with { Brightness = settings.Brightness + 1 };
+        Invoke(context, "Apply", display, changed, true);
+        Require(overlay.Sets == 3, "Changing brightness should invalidate the worker cache.");
+        var moved = display with { X = display.X + 1 };
+        Invoke(context, "UpdateDisplays", (object)new[] { moved });
+        Invoke(context, "Apply", moved, changed, true);
+        Require(overlay.Sets == 4, "Changing monitor geometry should invalidate the worker cache.");
+        Invoke(context, "RestoreAll");
+        Invoke(context, "Apply", moved, changed, true);
+        Require(overlay.Sets == 5, "Restoring effects should invalidate the worker cache.");
+
+        overlay.Available = false;
+        var retry = changed with { Brightness = changed.Brightness + 1 };
+        Invoke(context, "Apply", moved, retry, true);
+        overlay.Available = true;
+        Invoke(context, "Apply", moved, retry, true);
+        Require(overlay.Sets == 7, "A failed overlay application should be retried.");
+        Require(gamma.Writes == 2, "Fixed dimming should not write additional gamma ramps after the initial restore.");
+        Console.WriteLine("PASS effect worker | deduplication, invalidation, and retry after failure");
     }
 
     private static void ApplyLanguage(string language)
@@ -402,19 +497,19 @@ internal static class Program
         => typeof(MainWindow).GetEvent(name, BindingFlags.NonPublic | BindingFlags.Instance)
             ?? throw new InvalidOperationException($"Missing UI event {name}.");
 
-    private static void ShowSettings(MainWindow window, EffectSettings settings, string profile)
-        => Invoke(window, "ShowSettings", settings, true, false, "primary", profile);
+    private static void ShowSettings(MainWindow window, EffectSettings settings, string profile, bool overlayOnly = false)
+        => Invoke(window, "ShowSettings", settings, true, false, "primary", profile, true, overlayOnly);
 
     private static void Click(ButtonBase button) => button.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
 
-    private static void Invoke(MainWindow window, string name, params object?[] arguments)
+    private static void Invoke(object target, string name, params object?[] arguments)
     {
-        var method = typeof(MainWindow).GetMethod(name, BindingFlags.NonPublic | BindingFlags.Instance)
-            ?? throw new InvalidOperationException($"Missing UI adapter {name}.");
+        var method = target.GetType().GetMethod(name, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)
+            ?? throw new InvalidOperationException($"Missing fixture method {name}.");
         var parameters = method.GetParameters();
         var actual = parameters.Select((parameter, index) =>
             index < arguments.Length ? arguments[index] : parameter.DefaultValue).ToArray();
-        method.Invoke(window, actual);
+        method.Invoke(target, actual);
     }
 
     private static void Render(FixtureLayout layout, int percent, string output, string state)
@@ -449,6 +544,41 @@ internal static class Program
     {
         if (!condition)
             throw new InvalidOperationException(message);
+    }
+
+    private sealed class CountingGamma : IGammaTransport
+    {
+        internal GammaRamp Current { get; private set; } = GammaRamp.Identity;
+        internal int Reads { get; private set; }
+        internal int Writes { get; private set; }
+
+        public bool TryRead(DisplayInfo display, out GammaRamp? ramp)
+        {
+            Reads++;
+            ramp = Current;
+            return true;
+        }
+
+        public bool TryWrite(DisplayInfo display, GammaRamp ramp)
+        {
+            Writes++;
+            Current = ramp;
+            return true;
+        }
+    }
+
+    private sealed class CountingOverlay : IOverlayBackend
+    {
+        internal bool Available { get; set; } = true;
+        internal int Sets { get; private set; }
+
+        public bool TrySetOpacity(DisplayInfo display, byte opacity)
+        {
+            Sets++;
+            return Available;
+        }
+
+        public void Remove(string displayId) { }
     }
 
     private sealed record FixtureLayout(MainWindow Window, Border Surface, double Width, double MaxHeight, double Scale)

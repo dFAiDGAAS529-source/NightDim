@@ -177,7 +177,7 @@
                             <ui:PrecisionSlider x:Name="TemperatureSlider" Grid.Row="1" Style="{StaticResource GlassTemperatureSlider}"
                                     Minimum="2000" Maximum="8000" TickFrequency="100" IsSnapToTickEnabled="True" Value="6500"
                                     SmallChange="100" LargeChange="500" IsMoveToPointEnabled="True" ValueChanged="SettingChanged"
-                                    AutomationProperties.Name="{DynamicResource Temperature}"/>
+                                    AutomationProperties.Name="{DynamicResource Temperature}" ToolTipService.ShowOnDisabled="True"/>
                             <Grid Grid.Row="2">
                                 <TextBlock Text="{DynamicResource Warmer}" Style="{StaticResource QuietText}"/>
                                 <TextBlock Text="{DynamicResource Cooler}" Style="{StaticResource QuietText}" HorizontalAlignment="Right"/>
@@ -187,6 +187,7 @@
 
                     <Button x:Name="FineButton" Style="{StaticResource GlassSectionButton}" Click="FineClick"
                             AutomationProperties.Name="{DynamicResource FineTuning}"
+                            ToolTipService.ShowOnDisabled="True"
                             ToolTip="{DynamicResource FineTuningTip}">
                         <DockPanel>
                             <Path x:Name="FineChevron" DockPanel.Dock="Right" Style="{StaticResource LineIcon}"
@@ -245,6 +246,12 @@
                             <CheckBox x:Name="StartupBox" Content="{DynamicResource Startup}" Style="{StaticResource GlassToggle}"
                                       Click="StartupClick" HorizontalAlignment="Left" ToolTipService.ShowOnDisabled="True"/>
                             <TextBlock Text="{DynamicResource StartupTip}" Style="{StaticResource QuietText}"
+                                       TextWrapping="Wrap" Margin="0,4,0,0"/>
+                            <Border Height="1" Background="{DynamicResource GlassBorderBrush}" Margin="0,12"/>
+                            <CheckBox x:Name="OverlayOnlyBox" Content="{DynamicResource FixedDimming}" Style="{StaticResource GlassToggle}"
+                                      Click="OverlayOnlyClick" HorizontalAlignment="Left"
+                                      AutomationProperties.HelpText="{DynamicResource FixedDimmingHint}"/>
+                            <TextBlock Text="{DynamicResource FixedDimmingHint}" Style="{StaticResource QuietText}"
                                        TextWrapping="Wrap" Margin="0,4,0,0"/>
                         </StackPanel>
                     </Border>

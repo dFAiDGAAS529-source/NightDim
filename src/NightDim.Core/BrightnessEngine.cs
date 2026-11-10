@@ -8,10 +8,10 @@ public sealed class BrightnessEngine(IGammaTransport gamma, IOverlayBackend over
     private readonly GammaRampBackend _gamma = new(gamma, journal);
     private readonly Dictionary<string, byte> _opacities = new(StringComparer.Ordinal);
 
-    public DisplayEffectResult Apply(DisplayInfo display, EffectSettings settings)
+    public DisplayEffectResult Apply(DisplayInfo display, EffectSettings settings, bool overlayOnly = false)
     {
         settings = settings.Normalize();
-        if (settings == EffectSettings.Neutral)
+        if (!overlayOnly && settings == EffectSettings.Neutral)
         {
             bool restored = Restore(display);
             return new DisplayEffectResult(restored ? EffectMechanism.Neutral : EffectMechanism.Unavailable,
@@ -22,12 +22,15 @@ public sealed class BrightnessEngine(IGammaTransport gamma, IOverlayBackend over
         // Shape the relative slider to retain more SDR code levels at the dark end.
         double target = Math.Pow(settings.Brightness / 100.0, 0.60);
         double gammaGain = Math.Max(GammaFloor, target);
-        (bool gammaApplied, EffectDiagnostic status) = _gamma.Apply(display, settings, gammaGain);
-        if (settings.Brightness <= 10 && !gammaApplied && _gamma.HasPendingOwnership(display.Id))
+        (bool gammaApplied, EffectDiagnostic status) = overlayOnly
+            ? (false, EffectDiagnostic.OverlayOnly)
+            : _gamma.Apply(display, settings, gammaGain);
+        if (!gammaApplied && !_gamma.TryReleaseOwnership(display))
         {
+            // An uncompensated overlay could stack with our last LUT and dim the screen twice.
             RemoveOverlay(display.Id);
             return new DisplayEffectResult(EffectMechanism.Unavailable,
-                status, 0, false, EffectDiagnostic.ExtremeDimmingSuspended);
+                status, 0, false, EffectDiagnostic.DimmingSuspended);
         }
 
         double residual = gammaApplied ? target / gammaGain : target;
@@ -46,8 +49,9 @@ public sealed class BrightnessEngine(IGammaTransport gamma, IOverlayBackend over
         }
 
         RemoveOverlay(display.Id);
-        return new DisplayEffectResult(gammaApplied ? EffectMechanism.Gamma : EffectMechanism.Unavailable,
-            status, 0, gammaApplied, additionalDiagnostic);
+        var mechanism = gammaApplied ? EffectMechanism.Gamma
+            : overlayOnly && opacity == 0 ? EffectMechanism.Neutral : EffectMechanism.Unavailable;
+        return new DisplayEffectResult(mechanism, status, 0, gammaApplied, additionalDiagnostic);
     }
 
     public bool ProbeOverlay(DisplayInfo display) => overlay.TrySetOpacity(display, _opacities.GetValueOrDefault(display.Id));
