@@ -7,6 +7,10 @@ public sealed class Preferences
 {
     public bool Enabled { get; set; } = true;
     public bool OverlayOnly { get; set; }
+    public bool GammaOnly { get; set; }
+    [System.Text.Json.Serialization.JsonIgnore]
+    public DimmingMode Mode => GammaOnly ? DimmingMode.GammaOnly
+        : OverlayOnly ? DimmingMode.OverlayOnly : DimmingMode.Hybrid;
     public string Language { get; set; } = "ru";
     public bool Synchronize { get; set; }
     public string? SelectedDisplayId { get; set; }
@@ -47,7 +51,8 @@ public sealed class ProfileManager(string path)
         var result = new Preferences
         {
             Enabled = source.Enabled,
-            OverlayOnly = source.OverlayOnly,
+            OverlayOnly = !source.GammaOnly && source.OverlayOnly,
+            GammaOnly = source.GammaOnly,
             Language = source.Language == "en" ? "en" : "ru",
             Synchronize = source.Synchronize,
             SelectedDisplayId = IsPersistentDisplayId(source.SelectedDisplayId) ? source.SelectedDisplayId : null,

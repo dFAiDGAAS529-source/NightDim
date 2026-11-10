@@ -32,7 +32,8 @@ public partial class MainWindow : Window
 
     private bool _rendering;
     private bool _hasDisplay;
-    private bool _overlayOnly;
+    private DimmingMode _dimmingMode;
+    private int _requestedBrightness = 100;
     private bool? _startupEnabled;
     private IInputElement? _previousFocus;
 
@@ -48,6 +49,7 @@ public partial class MainWindow : Window
     internal event Action<string>? LanguageChanged;
     internal event Action<bool>? StartupChanged;
     internal event Action<bool>? OverlayOnlyChanged;
+    internal event Action<bool>? GammaOnlyChanged;
 
     internal MainWindow()
     {
@@ -104,11 +106,12 @@ public partial class MainWindow : Window
     }
 
     internal void ShowSettings(EffectSettings settings, bool enabled, bool synchronize,
-        string? displayId, string profileId, bool profileMatches = true, bool overlayOnly = false)
+        string? displayId, string profileId, bool profileMatches = true, DimmingMode dimmingMode = DimmingMode.Hybrid)
     {
         _rendering = true;
         _hasDisplay = displayId is not null;
-        SetOverlayOnly(overlayOnly);
+        _requestedBrightness = settings.Brightness;
+        SetDimmingMode(dimmingMode);
         EnabledBox.IsChecked = enabled;
         SyncBox.IsChecked = synchronize;
         DisplaysBox.SelectedValue = displayId;
@@ -253,18 +256,24 @@ public partial class MainWindow : Window
         SettingsButton.IsEnabled = !inPreview;
     }
 
-    private void SetOverlayOnly(bool enabled)
+    private void SetDimmingMode(DimmingMode mode)
     {
-        OverlayOnlyBox.IsChecked = enabled;
-        if (_overlayOnly == enabled)
+        var overlayOnly = mode == DimmingMode.OverlayOnly;
+        var gammaOnly = mode == DimmingMode.GammaOnly;
+        OverlayOnlyBox.IsChecked = overlayOnly;
+        GammaOnlyBox.IsChecked = gammaOnly;
+        if (_dimmingMode == mode)
             return;
 
-        _overlayOnly = enabled;
-        TemperatureSlider.IsEnabled = !enabled;
-        FineButton.IsEnabled = !enabled;
-        FinePanel.IsEnabled = !enabled;
-        FineButton.SetResourceReference(ToolTipProperty, enabled ? "FixedDimmingColorDisabled" : "FineTuningTip");
-        if (enabled)
+        _dimmingMode = mode;
+        BrightnessSlider.Minimum = gammaOnly ? BrightnessEngine.MinimumGammaOnlyBrightness : 1;
+        BrightnessMinimumText.Text = $"{BrightnessSlider.Minimum:0}%";
+        BrightnessSlider.SetResourceReference(ToolTipProperty, gammaOnly ? "GammaOnlyBrightnessTip" : "BrightnessTip");
+        TemperatureSlider.IsEnabled = !overlayOnly;
+        FineButton.IsEnabled = !overlayOnly;
+        FinePanel.IsEnabled = !overlayOnly;
+        FineButton.SetResourceReference(ToolTipProperty, overlayOnly ? "FixedDimmingColorDisabled" : "FineTuningTip");
+        if (overlayOnly)
             TemperatureSlider.SetResourceReference(ToolTipProperty, "FixedDimmingColorDisabled");
         else
             TemperatureSlider.ClearValue(ToolTipProperty);
@@ -322,6 +331,7 @@ public partial class MainWindow : Window
     private void ExitClick(object sender, RoutedEventArgs e) => ExitRequested?.Invoke();
     private void StartupClick(object sender, RoutedEventArgs e) => StartupChanged?.Invoke(StartupBox.IsChecked == true);
     private void OverlayOnlyClick(object sender, RoutedEventArgs e) => OverlayOnlyChanged?.Invoke(OverlayOnlyBox.IsChecked == true);
+    private void GammaOnlyClick(object sender, RoutedEventArgs e) => GammaOnlyChanged?.Invoke(GammaOnlyBox.IsChecked == true);
     private void SettingsClick(object sender, RoutedEventArgs e) => SetSettingsOpen(SettingsPanel.Visibility != Visibility.Visible);
 
     private void FineClick(object sender, RoutedEventArgs e)
@@ -372,8 +382,10 @@ public partial class MainWindow : Window
 
         UpdateValueLabels();
         SetProfileHighlight("custom");
+        if (ReferenceEquals(sender, BrightnessSlider))
+            _requestedBrightness = (int)BrightnessSlider.Value;
         SettingsChanged?.Invoke(new EffectSettings(
-            (int)BrightnessSlider.Value, (int)TemperatureSlider.Value,
+            _requestedBrightness, (int)TemperatureSlider.Value,
             Math.Round(GammaSlider.Value, 2), (int)BlueReductionSlider.Value,
             Math.Round(RedSlider.Value, 2), Math.Round(GreenSlider.Value, 2), Math.Round(BlueSlider.Value, 2)));
     }

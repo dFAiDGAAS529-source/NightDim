@@ -35,7 +35,7 @@ internal static class Program
 
     private static readonly string[] SettingsControls =
     [
-        "StartupBox", "OverlayOnlyBox", "HotKeyLine", "ProfilesBox", "SaveButton", "DetailLine", "ExitButton",
+        "StartupBox", "OverlayOnlyBox", "GammaOnlyBox", "HotKeyLine", "ProfilesBox", "SaveButton", "DetailLine", "ExitButton",
     ];
 
     [STAThread]
@@ -128,6 +128,7 @@ internal static class Program
         Require(Equals(layout.Find<CheckBox>("StartupBox").Content, "Запускать с Windows"),
             "The startup label did not switch back to Russian.");
         AssertOverlayOnly(layout, "Фиксированное затемнение");
+        AssertGammaOnly(layout, "Без экранного слоя");
         string? savedProfile = null;
         Subscribe(window, "ProfileSaved", (Action<string>)(id => savedProfile = id));
         layout.Find<ComboBox>("ProfilesBox").SelectedValue = "night";
@@ -171,7 +172,7 @@ internal static class Program
             Require(slider.IsEnabled, "Sliders did not unlock when preview closed.");
         }
 
-        Console.WriteLine($"PASS {percent}% | RU/EN, power, startup, fixed dimming, fine tuning and 10/5/1% preview | " +
+        Console.WriteLine($"PASS {percent}% | RU/EN, power, startup, dimming modes, fine tuning and 10/5/1% preview | " +
             $"{scrolled} main and {fineScrolled} fine controls needed scrolling");
         if (percent == 200)
             RunCompactLayout(layout, output);
@@ -278,6 +279,7 @@ internal static class Program
             layout.RequireReachable(name);
         AssertStartup(layout);
         AssertOverlayOnly(layout, "Fixed dimming");
+        AssertGammaOnly(layout, "Without screen overlay");
         Click(settings);
 
         Invoke(window, "SetPreview", 15, true);
@@ -346,16 +348,16 @@ internal static class Program
         var changes = new List<bool>();
         Action<bool> onChange = changes.Add;
         Subscribe(window, "OverlayOnlyChanged", onChange);
-        ShowSettings(window, settings, "evening", overlayOnly: true);
+        ShowSettings(window, settings, "evening", DimmingMode.OverlayOnly);
         Require(changes.Count == 0 && toggle.IsChecked == true,
             "Rendering the fixed dimming preference should not emit a user action.");
-        ShowSettings(window, settings, "evening", overlayOnly: false);
+        ShowSettings(window, settings, "evening");
         Require(changes.Count == 0 && toggle.IsChecked == false,
             "Rendering the standard preference should not emit a user action.");
 
         toggle.IsChecked = true;
         Click(toggle);
-        ShowSettings(window, settings, "evening", overlayOnly: true);
+        ShowSettings(window, settings, "evening", DimmingMode.OverlayOnly);
         Require(changes.SequenceEqual(new[] { true }) && toggle.IsChecked == true,
             "The fixed dimming switch did not report one enable action.");
         Require(brightness.IsEnabled && !temperature.IsEnabled && !fine.IsEnabled &&
@@ -366,11 +368,62 @@ internal static class Program
 
         toggle.IsChecked = false;
         Click(toggle);
-        ShowSettings(window, settings, "evening", overlayOnly: false);
+        ShowSettings(window, settings, "evening");
         Require(changes.SequenceEqual(new[] { true, false }) && toggle.IsChecked == false &&
             brightness.IsEnabled && temperature.IsEnabled && fine.IsEnabled,
             "Switching back to the standard mode did not restore color controls.");
         Unsubscribe(window, "OverlayOnlyChanged", onChange);
+    }
+
+    private static void AssertGammaOnly(FixtureLayout layout, string label)
+    {
+        var window = layout.Window;
+        var toggle = layout.Find<CheckBox>("GammaOnlyBox");
+        var fixedToggle = layout.Find<CheckBox>("OverlayOnlyBox");
+        var brightness = layout.Find<Slider>("BrightnessSlider");
+        var temperature = layout.Find<Slider>("TemperatureSlider");
+        var fine = layout.Find<Button>("FineButton");
+        var settings = ProfileManager.DefaultProfiles["night"];
+        Require(Equals(toggle.Content, label) && toggle.IsEnabled && toggle.IsChecked == false,
+            $"The gamma-only switch did not show its localized default state ({label}).");
+
+        var changes = new List<bool>();
+        Action<bool> onChange = changes.Add;
+        var settingsChanges = 0;
+        Action<EffectSettings> onSettingsChange = _ => settingsChanges++;
+        Subscribe(window, "GammaOnlyChanged", onChange);
+        Subscribe(window, "SettingsChanged", onSettingsChange);
+        ShowSettings(window, settings, "night", DimmingMode.GammaOnly);
+        Require(changes.Count == 0 && toggle.IsChecked == true && fixedToggle.IsChecked == false,
+            "Rendering gamma-only mode should set the switch without emitting a user action.");
+        Require(brightness.IsEnabled && brightness.Minimum == BrightnessEngine.MinimumGammaOnlyBrightness &&
+            brightness.Value == brightness.Minimum && temperature.Value == settings.Temperature,
+            "Gamma-only mode should clamp the brightness control without changing the color settings.");
+        Require(layout.Find<TextBlock>("BrightnessMinimumText").Text == $"{brightness.Minimum:0}%" &&
+            layout.Find<TextBlock>("BrightnessValue").Text == $"{brightness.Value:0}%",
+            "The gamma-only labels should show the effective brightness and lower limit.");
+        Require(temperature.IsEnabled && fine.IsEnabled && FineControls.All(name => layout.Find<Slider>(name).IsEnabled),
+            "Gamma-only mode should keep all color controls enabled.");
+
+        ShowSettings(window, settings, "night", DimmingMode.OverlayOnly);
+        Require(changes.Count == 0 && toggle.IsChecked == false && fixedToggle.IsChecked == true &&
+            brightness.Minimum == 1 && brightness.Value == settings.Brightness,
+            "Switching to fixed dimming should select its switch and restore the full brightness range.");
+        ShowSettings(window, settings, "night");
+        Require(changes.Count == 0 && toggle.IsChecked == false && fixedToggle.IsChecked == false,
+            "Rendering hybrid mode should clear both switches without emitting a user action.");
+
+        toggle.IsChecked = true;
+        Click(toggle);
+        ShowSettings(window, settings, "night", DimmingMode.GammaOnly);
+        toggle.IsChecked = false;
+        Click(toggle);
+        ShowSettings(window, ProfileManager.DefaultProfiles["evening"], "evening");
+        Require(changes.SequenceEqual(new[] { true, false }) && toggle.IsChecked == false && brightness.Minimum == 1,
+            "The gamma-only switch did not report both user actions.");
+        Require(settingsChanges == 0, "Rendering the gamma-only range should not overwrite stored settings.");
+        Unsubscribe(window, "SettingsChanged", onSettingsChange);
+        Unsubscribe(window, "GammaOnlyChanged", onChange);
     }
 
     private static void AssertEffectWorkerCache()
@@ -378,7 +431,7 @@ internal static class Program
         var gamma = new CountingGamma();
         var overlay = new CountingOverlay();
         var engine = new BrightnessEngine(gamma, overlay, new MemoryGammaJournal());
-        // Context can read capture status and clear this empty backend. All effects use the fake engine backends.
+        // RestoreAll can clear this empty backend. All effects use the fake engine backends.
         using var inactiveOverlay = new NightDim.Windows.OverlayBackend();
         var type = typeof(App).Assembly.GetType("NightDim.EffectWorker+Context", throwOnError: true)!;
         var context = Activator.CreateInstance(type, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance,
@@ -386,42 +439,65 @@ internal static class Program
         var display = Displays[0];
         var settings = ProfileManager.DefaultProfiles["evening"];
         Invoke(context, "UpdateDisplays", (object)new[] { display });
-        Invoke(context, "Apply", display, settings, false);
+        Invoke(context, "Apply", display, settings, DimmingMode.Hybrid);
         Require(gamma.Writes == 1 && overlay.Sets == 1, "The first standard effect did not apply through both backends.");
 
         var reads = gamma.Reads;
         var unchanged = display with { };
         Invoke(context, "UpdateDisplays", (object)new[] { unchanged });
-        Invoke(context, "Apply", unchanged, settings with { }, false);
+        Invoke(context, "Apply", unchanged, settings with { }, DimmingMode.Hybrid);
         Require(gamma.Reads == reads && gamma.Writes == 1 && overlay.Sets == 1,
             "An identical standard effect touched the backends again.");
 
-        Invoke(context, "Apply", display, settings, true);
+        Invoke(context, "Apply", display, settings, DimmingMode.OverlayOnly);
         Require(gamma.Current.Matches(GammaRamp.Identity) && gamma.Writes == 2 && overlay.Sets == 2,
             "Switching to fixed dimming should restore the owned LUT and update the overlay.");
         reads = gamma.Reads;
-        Invoke(context, "Apply", display, settings, true);
+        Invoke(context, "Apply", display, settings, DimmingMode.OverlayOnly);
         Require(gamma.Reads == reads && overlay.Sets == 2, "An identical fixed effect touched the backends again.");
 
         var changed = settings with { Brightness = settings.Brightness + 1 };
-        Invoke(context, "Apply", display, changed, true);
+        Invoke(context, "Apply", display, changed, DimmingMode.OverlayOnly);
         Require(overlay.Sets == 3, "Changing brightness should invalidate the worker cache.");
-        var moved = display with { X = display.X + 1 };
+        var moved = display with { X = display.X + 1, Width = display.Width - 1 };
+        var removals = overlay.Removes;
         Invoke(context, "UpdateDisplays", (object)new[] { moved });
-        Invoke(context, "Apply", moved, changed, true);
+        Require(overlay.Removes == removals && overlay.ActiveDisplayId == moved.Id,
+            "Changing geometry should keep the same display's overlay.");
+        Invoke(context, "Apply", moved, changed, DimmingMode.OverlayOnly);
         Require(overlay.Sets == 4, "Changing monitor geometry should invalidate the worker cache.");
         Invoke(context, "RestoreAll");
-        Invoke(context, "Apply", moved, changed, true);
+        Invoke(context, "Apply", moved, changed, DimmingMode.OverlayOnly);
         Require(overlay.Sets == 5, "Restoring effects should invalidate the worker cache.");
 
         overlay.Available = false;
         var retry = changed with { Brightness = changed.Brightness + 1 };
-        Invoke(context, "Apply", moved, retry, true);
+        Invoke(context, "Apply", moved, retry, DimmingMode.OverlayOnly);
         overlay.Available = true;
-        Invoke(context, "Apply", moved, retry, true);
+        Invoke(context, "Apply", moved, retry, DimmingMode.OverlayOnly);
         Require(overlay.Sets == 7, "A failed overlay application should be retried.");
         Require(gamma.Writes == 2, "Fixed dimming should not write additional gamma ramps after the initial restore.");
-        Console.WriteLine("PASS effect worker | deduplication, invalidation, and retry after failure");
+
+        Invoke(context, "Apply", moved, retry, DimmingMode.GammaOnly);
+        Require(gamma.Writes == 3 && overlay.Sets == 7 && overlay.ActiveDisplayId is null,
+            "Gamma-only mode should apply gamma and remove the previous overlay.");
+        reads = gamma.Reads;
+        Invoke(context, "Apply", moved, retry, DimmingMode.GammaOnly);
+        Require(gamma.Reads == reads && gamma.Writes == 3 && overlay.Sets == 7,
+            "An identical gamma-only effect touched the backends again.");
+
+        Invoke(context, "Apply", moved, retry, DimmingMode.OverlayOnly);
+        var hdr = moved with { Hdr = HdrState.Hdr };
+        removals = overlay.Removes;
+        Invoke(context, "UpdateDisplays", (object)new[] { hdr });
+        Require(overlay.Removes == removals && overlay.ActiveDisplayId == hdr.Id,
+            "Changing HDR should keep the same display's overlay.");
+        Invoke(context, "Apply", hdr, retry, DimmingMode.OverlayOnly);
+        Require(overlay.Sets == 9, "Changing HDR should invalidate the worker cache.");
+        Invoke(context, "UpdateDisplays", (object)Array.Empty<DisplayInfo>());
+        Require(overlay.Removes == removals + 1 && overlay.ActiveDisplayId is null,
+            "Disconnecting the display should remove its overlay.");
+        Console.WriteLine("PASS effect worker | deduplication, mode changes, display lifecycle, and retry after failure");
     }
 
     private static void ApplyLanguage(string language)
@@ -497,8 +573,9 @@ internal static class Program
         => typeof(MainWindow).GetEvent(name, BindingFlags.NonPublic | BindingFlags.Instance)
             ?? throw new InvalidOperationException($"Missing UI event {name}.");
 
-    private static void ShowSettings(MainWindow window, EffectSettings settings, string profile, bool overlayOnly = false)
-        => Invoke(window, "ShowSettings", settings, true, false, "primary", profile, true, overlayOnly);
+    private static void ShowSettings(MainWindow window, EffectSettings settings, string profile,
+        DimmingMode mode = DimmingMode.Hybrid)
+        => Invoke(window, "ShowSettings", settings, true, false, "primary", profile, true, mode);
 
     private static void Click(ButtonBase button) => button.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
 
@@ -571,14 +648,24 @@ internal static class Program
     {
         internal bool Available { get; set; } = true;
         internal int Sets { get; private set; }
+        internal int Removes { get; private set; }
+        internal string? ActiveDisplayId { get; private set; }
 
         public bool TrySetOpacity(DisplayInfo display, byte opacity)
         {
             Sets++;
-            return Available;
+            if (!Available)
+                return false;
+            ActiveDisplayId = opacity == 0 ? null : display.Id;
+            return true;
         }
 
-        public void Remove(string displayId) { }
+        public void Remove(string displayId)
+        {
+            Removes++;
+            if (ActiveDisplayId == displayId)
+                ActiveDisplayId = null;
+        }
     }
 
     private sealed record FixtureLayout(MainWindow Window, Border Surface, double Width, double MaxHeight, double Scale)

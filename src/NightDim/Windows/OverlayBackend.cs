@@ -19,7 +19,6 @@ public sealed class OverlayBackend : IOverlayBackend, IDisposable
     private const uint SwpHideWindow = 0x0080;
     private const uint SwpNoOwnerZOrder = 0x0200;
     private const uint LwaAlpha = 2;
-    private const uint WdaExcludeFromCapture = 0x11;
     private const int BlackBrush = 4;
     private const int GwlExStyle = -20;
 
@@ -65,12 +64,6 @@ public sealed class OverlayBackend : IOverlayBackend, IDisposable
                 Remove(display.Id);
                 return false;
             }
-
-            if (visible && !window.Visible)
-            {
-                window.CaptureExcluded = SetWindowDisplayAffinity(window.Handle, WdaExcludeFromCapture) &&
-                    GetWindowDisplayAffinity(window.Handle, out var affinity) && affinity == WdaExcludeFromCapture;
-            }
         }
 
         window.Opacity = opacity;
@@ -78,9 +71,6 @@ public sealed class OverlayBackend : IOverlayBackend, IDisposable
         window.Bounds = bounds;
         return true;
     }
-
-    public bool? CaptureExcluded(string displayId) =>
-        _windows.TryGetValue(displayId, out var window) && window.Visible ? window.CaptureExcluded : null;
 
     internal OverlayInspection? Inspect(string displayId)
     {
@@ -154,7 +144,6 @@ public sealed class OverlayBackend : IOverlayBackend, IDisposable
         public byte? Opacity { get; set; }
         public NativeRect Bounds { get; set; }
         public bool Visible { get; set; }
-        public bool CaptureExcluded { get; set; }
     }
 
     internal readonly record struct OverlayInspection(nint Hwnd, bool AlphaRead, byte Alpha, uint LayeredFlags,
@@ -216,9 +205,6 @@ public sealed class OverlayBackend : IOverlayBackend, IDisposable
 
     [DllImport("user32.dll")]
     private static extern bool GetLayeredWindowAttributes(nint window, out uint colorKey, out byte alpha, out uint flags);
-
-    [DllImport("user32.dll")]
-    private static extern bool SetWindowDisplayAffinity(nint window, uint affinity);
 
     [DllImport("user32.dll")]
     private static extern bool GetWindowDisplayAffinity(nint window, out uint affinity);

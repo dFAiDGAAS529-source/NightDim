@@ -50,6 +50,9 @@
   <data name="FixedDimming" xml:space="preserve"><value>Фиксированное затемнение</value></data>
   <data name="FixedDimmingHint" xml:space="preserve"><value>Использует слой с постоянной непрозрачностью. Цветокоррекция NightDim в этом режиме приостановлена.</value></data>
   <data name="FixedDimmingColorDisabled" xml:space="preserve"><value>Чтобы настроить цвета, выключите фиксированное затемнение.</value></data>
+  <data name="GammaOnly" xml:space="preserve"><value>Без экранного слоя</value></data>
+  <data name="GammaOnlyHint" xml:space="preserve"><value>Только гамма на совместимых SDR-мониторах. Для более сильного затемнения используйте экранный слой.</value></data>
+  <data name="GammaOnlyBrightnessTip" xml:space="preserve"><value>Стрелки и колёсико меняют яркость на 1%. Диапазон ограничен режимом без экранного слоя.</value></data>
   <data name="Hotkeys" xml:space="preserve"><value>Горячие клавиши</value></data>
   <data name="SaveCurrent" xml:space="preserve"><value>Сохранить текущие параметры</value></data>
   <data name="SaveTarget" xml:space="preserve"><value>Профиль для сохранения</value></data>
@@ -88,7 +91,6 @@
   <data name="NoMonitorsDetail" xml:space="preserve"><value>NightDim повторит обнаружение при изменении конфигурации.</value></data>
   <data name="NeutralStatus" xml:space="preserve"><value>Нейтральный режим</value></data>
   <data name="EffectUnavailable" xml:space="preserve"><value>Затемнение недоступно</value></data>
-  <data name="CaptureExclusionDenied" xml:space="preserve"><value>Windows отклонила исключение overlay из захвата.</value></data>
   <data name="CheckingDisplay" xml:space="preserve"><value>Проверка дисплея</value></data>
   <data name="CheckingDisplayDetail" xml:space="preserve"><value>Определяем доступные способы коррекции.</value></data>
   <data name="RestoreShortcutUnavailable" xml:space="preserve"><value>Аварийная клавиша недоступна. Диапазон 1–10% заблокирован.</value></data>
@@ -112,6 +114,7 @@
   <data name="Effect_ChangeUnverifiedRestoreDeferred" xml:space="preserve"><value>Изменение LUT не подтверждено. Восстановление отложено.</value></data>
   <data name="Effect_ExternalRampChange" xml:space="preserve"><value>LUT изменилась извне. Запись приостановлена до сброса.</value></data>
   <data name="Effect_OverlayOnly" xml:space="preserve"><value>Выбрано фиксированное затемнение. Цветокоррекция NightDim приостановлена.</value></data>
+  <data name="Effect_GammaOnlyLimited" xml:space="preserve"><value>Достигнута минимальная яркость режима без экранного слоя.</value></data>
   <data name="Effect_DimmingSuspended" xml:space="preserve"><value>Слой затемнения выключен до подтверждения восстановления LUT.</value></data>
   <data name="Effect_OverlayUnavailable" xml:space="preserve"><value>Окно затемнения недоступно.</value></data>
 </root>

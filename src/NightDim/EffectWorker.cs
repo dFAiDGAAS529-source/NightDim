@@ -68,26 +68,29 @@ internal sealed class EffectWorker
 
             foreach (var old in _displays)
             {
-                if (!current.Contains(old))
+                var updated = current.FirstOrDefault(display => display.Id == old.Id);
+                if (updated != old)
                     _applied.Remove(old.Id);
-                if (!current.Any(display => SameSource(old, display)))
+                if (updated is null)
                     Engine.Disconnect(old.Id);
+                else if (!SameSource(old, updated))
+                    Engine.ForgetGammaState(old.Id);
             }
             foreach (var display in current.Where(display => !_displays.Any(old => SameSource(old, display))))
                 Engine.Recover(display);
             _displays = current;
         }
 
-        internal DisplayEffectResult Apply(DisplayInfo display, EffectSettings settings, bool overlayOnly)
+        internal DisplayEffectResult Apply(DisplayInfo display, EffectSettings settings, DimmingMode mode)
         {
             if (_applied.TryGetValue(display.Id, out var prior) && prior.Display == display
-                && prior.Settings == settings && prior.OverlayOnly == overlayOnly)
+                && prior.Settings == settings && prior.Mode == mode)
                 return prior.Result;
 
             _applied.Remove(display.Id);
-            var result = Engine.Apply(display, settings, overlayOnly);
+            var result = Engine.Apply(display, settings, mode);
             if (result.Mechanism != EffectMechanism.Unavailable && result.AdditionalDiagnostic != EffectDiagnostic.OverlayUnavailable)
-                _applied[display.Id] = new(display, settings, overlayOnly, result);
+                _applied[display.Id] = new(display, settings, mode, result);
             return result;
         }
 
@@ -112,6 +115,6 @@ internal sealed class EffectWorker
         }
 
         private sealed record AppliedEffect(DisplayInfo Display, EffectSettings Settings,
-            bool OverlayOnly, DisplayEffectResult Result);
+            DimmingMode Mode, DisplayEffectResult Result);
     }
 }

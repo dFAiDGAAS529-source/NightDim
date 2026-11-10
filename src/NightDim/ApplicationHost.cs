@@ -31,7 +31,7 @@ internal sealed class ApplicationHost : IDisposable
     private readonly DispatcherTimer _debounce;
     private readonly DispatcherTimer _topologyTimer;
     private readonly DispatcherTimer _previewTimer;
-    private readonly Dictionary<string, (int Minimum, bool OverlayOnly)> _approvedMinimum = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, (int Minimum, DimmingMode Mode)> _approvedMinimum = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, string> _selectedProfiles = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, ScreenResult> _results = new(StringComparer.OrdinalIgnoreCase);
     private HwndSource? _messages;
@@ -106,7 +106,8 @@ internal sealed class ApplicationHost : IDisposable
         _window.DpiChanged += (_, _) => QueueRefresh();
         _window.Activated += (_, _) => QueueRefresh();
         _window.EffectToggled += SetEnabled;
-        _window.OverlayOnlyChanged += enabled => Change(preferences => preferences.OverlayOnly = enabled, render: true);
+        _window.OverlayOnlyChanged += enabled => SetDimmingMode(enabled ? DimmingMode.OverlayOnly : DimmingMode.Hybrid);
+        _window.GammaOnlyChanged += enabled => SetDimmingMode(enabled ? DimmingMode.GammaOnly : DimmingMode.Hybrid);
         _window.SynchronizeToggled += synchronize => Change(preferences =>
         {
             if (synchronize)
@@ -256,6 +257,12 @@ internal sealed class ApplicationHost : IDisposable
         Change(preferences => preferences.Enabled = enable, render: true);
     }
 
+    private void SetDimmingMode(DimmingMode mode) => Change(preferences =>
+    {
+        preferences.OverlayOnly = mode == DimmingMode.OverlayOnly;
+        preferences.GammaOnly = mode == DimmingMode.GammaOnly;
+    }, render: true);
+
     private void StepBrightness(int delta)
     {
         if (SelectedDisplay() is not { } selected)
@@ -263,10 +270,11 @@ internal sealed class ApplicationHost : IDisposable
         Change(preferences =>
         {
             var settings = SettingsFor(preferences, selected.Id);
-            SetSettings(preferences, selected.Id, settings with
-            {
-                Brightness = Math.Clamp(settings.Brightness + delta, 1, 100),
-            });
+            var minimum = preferences.GammaOnly ? BrightnessEngine.MinimumGammaOnlyBrightness : 1;
+            var brightness = Math.Max(minimum, settings.Brightness);
+            var adjusted = Math.Clamp(brightness + delta, minimum, 100);
+            if (adjusted != brightness)
+                SetSettings(preferences, selected.Id, settings with { Brightness = adjusted });
         }, render: true);
     }
 
@@ -371,8 +379,8 @@ internal sealed class ApplicationHost : IDisposable
                 {
                     if (revision != Volatile.Read(ref _revision))
                         return null;
-                    var effect = context.Apply(display, SettingsFor(requested, display.Id), requested.OverlayOnly);
-                    applied.Add(new ScreenResult(display.Id, effect, context.Overlay.CaptureExcluded(display.Id)));
+                    var effect = context.Apply(display, SettingsFor(requested, display.Id), requested.Mode);
+                    applied.Add(new ScreenResult(display.Id, effect));
                     if (low.Any(item => item.Id == display.Id) && !effect.CanPreviewExtreme)
                         return new ApplyResult(applied, true, false);
                 }
@@ -411,13 +419,13 @@ internal sealed class ApplicationHost : IDisposable
         }
     }
 
-    private DisplayInfo[] UnapprovedDisplays(Preferences preferences) => !preferences.Enabled ? [] :
+    private DisplayInfo[] UnapprovedDisplays(Preferences preferences) => !preferences.Enabled || preferences.GammaOnly ? [] :
         _displays.Where(display =>
         {
             var brightness = SettingsFor(preferences, display.Id).Brightness;
             return brightness <= ExtremeBrightness
                 && (!_approvedMinimum.TryGetValue(display.Id, out var approval)
-                    || brightness < approval.Minimum || preferences.OverlayOnly != approval.OverlayOnly);
+                    || brightness < approval.Minimum || preferences.Mode != approval.Mode);
         }).ToArray();
 
     private bool InPreview => _previewDeadline != 0;
@@ -442,7 +450,7 @@ internal sealed class ApplicationHost : IDisposable
         if (keep && _previewReady && Environment.TickCount64 < _previewDeadline)
         {
             foreach (var display in UnapprovedDisplays(_draft))
-                _approvedMinimum[display.Id] = (SettingsFor(_draft, display.Id).Brightness, _draft.OverlayOnly);
+                _approvedMinimum[display.Id] = (SettingsFor(_draft, display.Id).Brightness, _draft.Mode);
             EndPreview();
             Commit(_draft);
             Render();
@@ -566,7 +574,7 @@ internal sealed class ApplicationHost : IDisposable
         var profile = _selectedProfiles.GetValueOrDefault(ProfileScope()) ??
             _draft.Profiles.FirstOrDefault(pair => pair.Value == settings).Key ?? "custom";
         var profileMatches = _draft.Profiles.TryGetValue(profile, out var saved) && saved == settings;
-        _window.ShowSettings(settings, _draft.Enabled, _draft.Synchronize, display?.Id, profile, profileMatches, _draft.OverlayOnly);
+        _window.ShowSettings(settings, _draft.Enabled, _draft.Synchronize, display?.Id, profile, profileMatches, _draft.Mode);
         if (_toggleMenu is not null)
             _toggleMenu.Checked = _draft.Enabled;
 
@@ -590,8 +598,6 @@ internal sealed class ApplicationHost : IDisposable
                     _ => UiText.Get("EffectUnavailable"),
                 };
                 detail = UiText.Describe(result.Effect);
-                if (result.CaptureExcluded == false)
-                    detail += " " + UiText.Get("CaptureExclusionDenied");
             }
             else
             {
@@ -622,6 +628,7 @@ internal sealed class ApplicationHost : IDisposable
     {
         Enabled = preferences.Enabled,
         OverlayOnly = preferences.OverlayOnly,
+        GammaOnly = preferences.GammaOnly,
         Language = preferences.Language,
         Synchronize = preferences.Synchronize,
         SelectedDisplayId = preferences.SelectedDisplayId,
@@ -691,6 +698,6 @@ internal sealed class ApplicationHost : IDisposable
     [return: MarshalAs(UnmanagedType.Bool)]
     private static extern bool WTSUnRegisterSessionNotification(nint window);
 
-    private sealed record ScreenResult(string Id, DisplayEffectResult Effect, bool? CaptureExcluded);
+    private sealed record ScreenResult(string Id, DisplayEffectResult Effect);
     private sealed record ApplyResult(List<ScreenResult> Screens, bool Restored, bool Compatible);
 }

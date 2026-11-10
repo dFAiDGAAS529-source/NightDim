@@ -20,6 +20,8 @@ public interface IOverlayBackend
     void Remove(string displayId);
 }
 
+public enum DimmingMode { Hybrid, OverlayOnly, GammaOnly }
+
 public enum EffectMechanism { Neutral, Gamma, Overlay, Hybrid, Unavailable }
 
 public enum EffectDiagnostic
@@ -44,6 +46,7 @@ public enum EffectDiagnostic
     DimmingSuspended,
     OverlayUnavailable,
     OverlayOnly,
+    GammaOnlyLimited,
 }
 
 public sealed record DisplayEffectResult(

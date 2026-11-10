@@ -13,6 +13,55 @@ namespace NightDim;
 
 internal static class Diagnostics
 {
+    internal static int RunCaptureProbe(string output)
+    {
+        const int size = 24;
+        const byte alpha = 3;
+        var report = new StringBuilder()
+            .AppendLine("Offscreen NightDim overlay affinity probe.")
+            .AppendLine("No pixels captured or gamma ramps changed.");
+        var exitCode = 0;
+        try
+        {
+            var displays = new DisplayManager().Enumerate();
+            if (displays.Count == 0)
+                throw new InvalidOperationException("No active displays to establish safe offscreen bounds.");
+
+            var x = checked(displays.Min(display => display.X) - 2 * size);
+            var y = checked(displays.Min(display => display.Y) - 2 * size);
+            var fixture = new DisplayInfo("capture-probe", "", "Capture probe", x, y, size, size,
+                false, HdrState.Unknown, CanRecoverGamma: false);
+            using var overlay = new OverlayBackend();
+            if (!overlay.TrySetOpacity(fixture, alpha) || overlay.Inspect(fixture.Id) is not { } readback)
+                throw new InvalidOperationException("Could not create or inspect the offscreen overlay.");
+
+            report.AppendLine(FormattableString.Invariant(
+                $"Bounds=({readback.X}, {readback.Y}, {readback.Width}x{readback.Height}), alpha={readback.AlphaRead}/{readback.Alpha}, affinity={readback.AffinityRead}/0x{readback.Affinity:X}, style=0x{readback.ExtendedStyle:X}"));
+            if (readback.X != x || readback.Y != y || readback.Width != size || readback.Height != size ||
+                !readback.AlphaRead || readback.Alpha != alpha || !readback.AffinityRead || readback.Affinity != 0)
+                throw new InvalidOperationException("Expected offscreen bounds, test alpha and WDA_NONE.");
+
+            report.AppendLine("PASS: the active overlay does not restrict capture (WDA_NONE).");
+        }
+        catch (Exception ex)
+        {
+            exitCode = 1;
+            report.AppendLine(ex.Message);
+        }
+
+        try
+        {
+            var path = Path.GetFullPath(output);
+            Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+            File.WriteAllText(path, report.ToString());
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException)
+        {
+            return 1;
+        }
+        return exitCode;
+    }
+
     internal static async Task RunAsync(Application app, string output)
     {
         var report = new StringBuilder();

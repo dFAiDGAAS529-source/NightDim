@@ -152,7 +152,7 @@
                                     AutomationProperties.Name="{DynamicResource Brightness}" AutomationProperties.HelpText="{DynamicResource BrightnessHelp}"
                                     ToolTip="{DynamicResource BrightnessTip}"/>
                             <Grid Grid.Row="2">
-                                <TextBlock Text="1%" Style="{StaticResource QuietText}"/>
+                                <TextBlock x:Name="BrightnessMinimumText" Text="1%" Style="{StaticResource QuietText}"/>
                                 <TextBlock Text="100%" Style="{StaticResource QuietText}" HorizontalAlignment="Right"/>
                             </Grid>
                         </Grid>
@@ -252,6 +252,12 @@
                                       Click="OverlayOnlyClick" HorizontalAlignment="Left"
                                       AutomationProperties.HelpText="{DynamicResource FixedDimmingHint}"/>
                             <TextBlock Text="{DynamicResource FixedDimmingHint}" Style="{StaticResource QuietText}"
+                                       TextWrapping="Wrap" Margin="0,4,0,0"/>
+                            <Border Height="1" Background="{DynamicResource GlassBorderBrush}" Margin="0,12"/>
+                            <CheckBox x:Name="GammaOnlyBox" Content="{DynamicResource GammaOnly}" Style="{StaticResource GlassToggle}"
+                                      Click="GammaOnlyClick" HorizontalAlignment="Left"
+                                      AutomationProperties.HelpText="{DynamicResource GammaOnlyHint}"/>
+                            <TextBlock Text="{DynamicResource GammaOnlyHint}" Style="{StaticResource QuietText}"
                                        TextWrapping="Wrap" Margin="0,4,0,0"/>
                         </StackPanel>
                     </Border>

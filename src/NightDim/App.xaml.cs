@@ -17,6 +17,12 @@ public partial class App : Application
     protected override async void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
+        if (e.Args is ["--probe-capture", var capturePath])
+        {
+            Shutdown(Diagnostics.RunCaptureProbe(capturePath));
+            return;
+        }
+
         var defaultDirectory = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "NightDim");
         _instance = new Mutex(true, @"Local\NightDim.ScreenEffects", out var firstInstance);

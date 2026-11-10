@@ -26,6 +26,10 @@ var tests = new (string Name, Action Run)[]
     ("Unconfirmed gamma prevents an extreme overlay", BlocksUncertainExtreme),
     ("Fixed overlay keeps the brightness curve and skips gamma access", FixedOverlay),
     ("Switching to fixed overlay releases only our LUT", FixedOverlayReleasesOwnedRamp),
+    ("Gamma-only clamps dimming and never applies an overlay", GammaOnlyClampsBrightness),
+    ("Gamma-only removes an existing overlay on unsupported outputs", GammaOnlyUnsupported),
+    ("Gamma-only does not fall back to an overlay on LUT failure", GammaOnlyLutFailure),
+    ("Forgetting gamma state preserves the existing overlay", ForgetGammaPreservesOverlay),
     ("Persisted gamma uncertainty blocks both overlay modes", PersistedGammaUncertainty),
     ("Unavailable journal prevents unsafe writes", UnavailableJournal),
     ("External changes during journaling prevent the write", RecheckAfterJournal),
@@ -181,6 +185,11 @@ void SettingsRoundTrip() => InTempDirectory(path =>
     Preferences persistent = manager.Load();
     Check(persistent.SelectedDisplayId is null && !persistent.Displays.ContainsKey("session:transient"));
     Check(settings.Displays.ContainsKey("session:transient"));
+
+    settings.GammaOnly = true;
+    Check(manager.Save(settings));
+    var gammaOnly = manager.Load();
+    Check(gammaOnly.Mode == DimmingMode.GammaOnly && !gammaOnly.OverlayOnly);
 
     File.WriteAllText(file, """{"Profiles":null,"Displays":{"discard":null},"Synchronized":null}""");
     Preferences migrated = manager.Load();
@@ -358,11 +367,11 @@ void FixedOverlay()
     var engine = Engine(gamma, new FakeOverlay());
     var settings = new EffectSettings(40, 3000, 1.2);
 
-    DisplayEffectResult result = engine.Apply(display, settings, overlayOnly: true);
+    DisplayEffectResult result = engine.Apply(display, settings, DimmingMode.OverlayOnly);
     Check(result.Mechanism == EffectMechanism.Overlay && result.Status == EffectDiagnostic.OverlayOnly);
     Check(result.OverlayOpacity == 108 && !result.GammaApplied);
-    Check(engine.Apply(display, new EffectSettings(40), overlayOnly: true) == result);
-    Check(engine.Apply(display, settings with { Brightness = 100 }, overlayOnly: true).Mechanism == EffectMechanism.Neutral);
+    Check(engine.Apply(display, new EffectSettings(40), DimmingMode.OverlayOnly) == result);
+    Check(engine.Apply(display, settings with { Brightness = 100 }, DimmingMode.OverlayOnly).Mechanism == EffectMechanism.Neutral);
     Check(gamma.Reads == 0 && gamma.Writes == 0);
 }
 
@@ -381,15 +390,80 @@ void FixedOverlayReleasesOwnedRamp()
         return true;
     };
 
-    Check(engine.Apply(display, settings, overlayOnly: true).OverlayOpacity == 108);
+    Check(engine.Apply(display, settings, DimmingMode.OverlayOnly).OverlayOpacity == 108);
     Check(gamma.Current.Matches(GammaRamp.Identity) && gamma.Writes == 2);
     gamma.WriteOverride = null;
 
     Check(engine.Apply(display, settings).Mechanism == EffectMechanism.Hybrid);
     GammaRamp foreign = GammaCurve.Build(GammaRamp.Identity, new EffectSettings(Gamma: 1.2), 1);
     gamma.Current = foreign;
-    Check(engine.Apply(display, settings, overlayOnly: true).OverlayOpacity == 108);
+    Check(engine.Apply(display, settings, DimmingMode.OverlayOnly).OverlayOpacity == 108);
     Check(gamma.Current.Matches(foreign) && gamma.Writes == 3);
+}
+
+void GammaOnlyClampsBrightness()
+{
+    var gamma = new FakeGamma();
+    var overlay = new FakeOverlay();
+    var engine = Engine(gamma, overlay);
+    const int minimum = BrightnessEngine.MinimumGammaOnlyBrightness;
+    DisplayEffectResult dimmed = engine.Apply(display, new EffectSettings(1), DimmingMode.GammaOnly);
+    Check(dimmed.Mechanism == EffectMechanism.Gamma && dimmed.GammaApplied && !dimmed.CanPreviewExtreme);
+    Check(dimmed.AdditionalDiagnostic == EffectDiagnostic.GammaOnlyLimited);
+    GammaRamp expected = GammaCurve.Build(GammaRamp.Identity, new EffectSettings(minimum), Math.Pow(minimum / 100.0, 0.60));
+    Check(gamma.Current.Matches(expected) && gamma.Writes == 1);
+    Check(engine.Apply(display, new EffectSettings(minimum), DimmingMode.GammaOnly).AdditionalDiagnostic is null);
+    Check(gamma.Writes == 1 && overlay.SetCalls == 0);
+    Check(engine.Apply(display, EffectSettings.Neutral, DimmingMode.GammaOnly).Mechanism == EffectMechanism.Neutral);
+    Check(gamma.Current.Matches(GammaRamp.Identity) && gamma.Writes == 2 && overlay.SetCalls == 0);
+}
+
+void GammaOnlyUnsupported()
+{
+    var gamma = new FakeGamma();
+    var overlay = new FakeOverlay();
+    var engine = Engine(gamma, overlay);
+    var hdr = display with { Hdr = HdrState.Hdr, CanRecoverGamma = false };
+    var settings = new EffectSettings(40);
+    Check(engine.Apply(hdr, settings, DimmingMode.OverlayOnly).OverlayOpacity == 108);
+    Check(overlay.Opacity == 108 && overlay.SetCalls == 1);
+
+    DisplayEffectResult result = engine.Apply(hdr, settings, DimmingMode.GammaOnly);
+    Check(result.Mechanism == EffectMechanism.Unavailable && result.Status == EffectDiagnostic.HdrUnsupported);
+    Check(result.OverlayOpacity == 0 && overlay.Opacity == 0 && overlay.SetCalls == 1);
+    Check(engine.Apply(hdr, EffectSettings.Neutral, DimmingMode.GammaOnly).Mechanism == EffectMechanism.Neutral);
+    Check(gamma.Reads == 0 && gamma.Writes == 0);
+}
+
+void GammaOnlyLutFailure()
+{
+    var gamma = new FakeGamma();
+    var overlay = new FakeOverlay();
+    var journal = new MemoryGammaJournal();
+    var engine = Engine(gamma, overlay, journal);
+    var settings = new EffectSettings(40);
+    Check(engine.Apply(display, settings).Mechanism == EffectMechanism.Hybrid);
+    gamma.CanRead = false;
+
+    DisplayEffectResult result = engine.Apply(display, settings, DimmingMode.GammaOnly);
+    Check(result.Mechanism == EffectMechanism.Unavailable && result.Status == EffectDiagnostic.ReadbackUnavailable);
+    Check(result.AdditionalDiagnostic == EffectDiagnostic.DimmingSuspended);
+    Check(overlay.Opacity == 0 && overlay.SetCalls == 1 && gamma.Writes == 1);
+    Check(journal.TryRead(display.Id, out GammaJournalEntry? saved) && saved?.Owns(gamma.Current) == true);
+}
+
+void ForgetGammaPreservesOverlay()
+{
+    var gamma = new FakeGamma();
+    var overlay = new FakeOverlay();
+    var engine = Engine(gamma, overlay);
+    byte opacity = engine.Apply(display, new EffectSettings(40)).OverlayOpacity;
+    Check(opacity > 0 && overlay.Opacity == opacity && gamma.Writes == 1);
+
+    engine.ForgetGammaState(display.Id);
+    Check(overlay.Opacity == opacity && overlay.SetCalls == 1);
+    Check(engine.Recover(display) && gamma.Current.Matches(GammaRamp.Identity) && gamma.Writes == 2);
+    Check(engine.ProbeOverlay(display) && overlay.Opacity == opacity);
 }
 
 void PersistedGammaUncertainty()
@@ -407,14 +481,14 @@ void PersistedGammaUncertainty()
         fallback.AdditionalDiagnostic == EffectDiagnostic.DimmingSuspended && overlay.Opacity == 0);
 
     DisplayInfo hdr = display with { Hdr = HdrState.Hdr, CanRecoverGamma = false };
-    DisplayEffectResult fixedMode = restarted.Apply(hdr, settings, overlayOnly: true);
+    DisplayEffectResult fixedMode = restarted.Apply(hdr, settings, DimmingMode.OverlayOnly);
     Check(fixedMode.Status == EffectDiagnostic.OverlayOnly &&
         fixedMode.AdditionalDiagnostic == EffectDiagnostic.DimmingSuspended && overlay.Opacity == 0);
     Check(journal.TryRead(display.Id, out GammaJournalEntry? saved) && saved?.Owns(gamma.Current) == true);
     Check(gamma.Writes == 1);
 
     gamma.CanRead = true;
-    Check(restarted.Apply(display, settings, overlayOnly: true).OverlayOpacity == 108);
+    Check(restarted.Apply(display, settings, DimmingMode.OverlayOnly).OverlayOpacity == 108);
     Check(gamma.Current.Matches(GammaRamp.Identity) && gamma.Writes == 2);
 }
 
@@ -531,9 +605,11 @@ sealed class FakeOverlay : IOverlayBackend
 {
     public byte Opacity { get; private set; }
     public bool Available { get; set; } = true;
+    public int SetCalls { get; private set; }
 
     public bool TrySetOpacity(DisplayInfo display, byte opacity)
     {
+        SetCalls++;
         if (!Available)
             return false;
         Opacity = opacity;

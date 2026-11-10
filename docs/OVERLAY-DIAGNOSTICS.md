@@ -1,8 +1,8 @@
 # Диагностика жёлтой рамки
 
-Windows Graphics Capture рисует системную рамку вокруг окна или дисплея, который захватывается. Если запущено несколько сеансов захвата, рамка может появиться вокруг каждого выбранного объекта. Исключение собственного слоя NightDim из поддерживаемых видов захвата через `WDA_EXCLUDEFROMCAPTURE` управляет содержимым записи. Системная индикация захвата относится к отдельному механизму Windows. [Windows Graphics Capture](https://learn.microsoft.com/en-us/windows/apps/develop/media-authoring-processing/screen-capture) · [SetWindowDisplayAffinity](https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-setwindowdisplayaffinity)
+Windows Graphics Capture рисует системную рамку вокруг окна или дисплея, который захватывается. Если запущено несколько сеансов захвата, рамка может появиться вокруг каждого выбранного объекта. Версии NightDim до 1.1.2 запрашивали исключение слоя через `WDA_EXCLUDEFROMCAPTURE`. В 1.1.2 слой использует стандартный `WDA_NONE`, поэтому его затемнение может попасть в запись. Системная индикация захвата относится к отдельному механизму Windows. [Windows Graphics Capture](https://learn.microsoft.com/en-us/windows/apps/develop/media-authoring-processing/screen-capture) · [SetWindowDisplayAffinity](https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-setwindowdisplayaffinity)
 
-## Проверка NightDim
+## Проверка версии до 1.1.2
 
 На Windows 11 build 26200 проверили нативные окна слоя на трёх SDR-дисплеях 1920 × 1080 с X = −1920, 0 и 1920. При alpha 8 внешний и клиентский прямоугольники всех окон точно совпали с границами своих дисплеев. У окон были стили `WS_POPUP`, `WS_VISIBLE` и `WS_CLIPSIBLINGS`, расширенный стиль `0x080800A8` и affinity `0x11`. Код отрисовывает клиентскую область чёрной кистью. Фокус сохранился, тестовые окна удалились.
 
